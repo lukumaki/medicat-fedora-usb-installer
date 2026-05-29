@@ -1,0 +1,49 @@
+# Logs
+*.log
+logs/
+medicat_builder.log
+
+# Temporary directories
+tmp/
+temp/
+*.tmp
+
+# Ventoy extracted folder
+ventoy/
+ventoy-*/
+
+# Medicat extracted folder
+MedicatUSB/
+MedicatExtracted/
+Medicat*/
+
+# Mountpoints
+mnt/
+mount/
+MedicatUSB/
+
+# Backup files
+*~
+*.bak
+*.backup
+
+# Editor swap files
+*.swp
+*.swo
+*.swx
+
+# macOS
+.DS_Store
+
+# Linux trash
+.Trash-*
+
+# ShellCheck cache
+.shellcheck*
+
+# Python virtualenvs (if ever added)
+venv/
+.env/
+
+# System files
+Thumbs.db
