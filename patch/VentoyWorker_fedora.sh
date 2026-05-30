@@ -1,10 +1,9 @@
 #!/bin/bash
 # Fedora‑patched wrapper for VentoyWorker.sh
-# Ensures mkexfatfs fallback + stable partition detection
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "[Fedora Patch] Preparing VentoyWorker environment..."
 
@@ -30,4 +29,4 @@ export VENTOY_WAIT_EXTRA=1
 # 3. Run official VentoyWorker.sh
 # --------------------------------------------------------------------
 echo "[Fedora Patch] Running official VentoyWorker.sh..."
-exec bash "$SCRIPT_DIR/tool/VentoyWorker.sh" "$@"
+exec bash "$SCRIPT_DIR/ventoy/tool/VentoyWorker.sh" "$@"
