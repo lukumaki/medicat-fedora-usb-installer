@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-# Resolve absolute path of THIS script
 SELF="$(readlink -f "$0")"
 PATCH_DIR="$(dirname "$SELF")"
 ROOT_DIR="$(dirname "$PATCH_DIR")"
