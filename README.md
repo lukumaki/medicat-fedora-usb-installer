@@ -136,11 +136,23 @@ You can choose whether to unmount the USB at the end.
 ```
 medicat-fedora-usb-installer/
 │
-├── medicat_usb_builder.sh     # Main installer script
-├── README.md                  # Documentation
-├── LICENSE                    # MIT License
-├── .gitignore                 # Ignore logs, temp files, extracted folders
-└── medicat_builder.log        # Log file (created at runtime)
+├── medicat_usb_builder.sh
+│
+├── ventoy/
+│   ├── Ventoy2Disk.sh
+│   ├── tool/
+│   │   ├── VentoyWorker.sh
+│   │   ├── ventoy_lib.sh
+│   │   └── (Ventoy binaries)
+│
+├── patch/
+│   ├── Ventoy2Disk_fedora.sh
+│   ├── VentoyWorker_fedora.sh
+│   └── README_fedora_patch.md
+│
+└── assets/
+    └── (logos, screenshots, etc)
+
 ```
 
 ---
