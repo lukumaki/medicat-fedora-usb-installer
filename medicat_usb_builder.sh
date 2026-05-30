@@ -65,7 +65,7 @@ if [ ! -d "ventoy" ]; then
 
     echo "[INFO] Extracting Ventoy..."
     rm -rf ventoy
-    mkdir ventoy
+    mkdir -p ventoy
     tar -xf ventoy.tar.gz -C ventoy --strip-components=1
 else
     echo "[OK] Ventoy folder already exists."
