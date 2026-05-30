@@ -1,11 +1,10 @@
 #!/bin/bash
 # Fedora‑patched wrapper for Ventoy2Disk.sh
-# Author: Frixos + Copilot
-# Purpose: Make Ventoy fully compatible with Fedora 38–44
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# SCRIPT_DIR = root folder of the project
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "[Fedora Patch] Preparing Ventoy environment..."
 
@@ -25,13 +24,13 @@ fi
 # --------------------------------------------------------------------
 # 2. Fix PATH so Ventoy tools resolve correctly
 # --------------------------------------------------------------------
-export PATH="$SCRIPT_DIR/tool/x86_64:$PATH"
-export PATH="$SCRIPT_DIR/tool/aarch64:$PATH"
-export PATH="$SCRIPT_DIR/tool/mips64el:$PATH"
-export PATH="$SCRIPT_DIR/tool/i386:$PATH"
+export PATH="$SCRIPT_DIR/ventoy/tool/x86_64:$PATH"
+export PATH="$SCRIPT_DIR/ventoy/tool/aarch64:$PATH"
+export PATH="$SCRIPT_DIR/ventoy/tool/mips64el:$PATH"
+export PATH="$SCRIPT_DIR/ventoy/tool/i386:$PATH"
 
 # --------------------------------------------------------------------
 # 3. Run official Ventoy2Disk.sh with all arguments
 # --------------------------------------------------------------------
 echo "[Fedora Patch] Running official Ventoy2Disk.sh..."
-exec bash "$SCRIPT_DIR/Ventoy2Disk.sh" "$@"
+exec bash "$SCRIPT_DIR/ventoy/Ventoy2Disk.sh" "$@"
