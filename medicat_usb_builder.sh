@@ -64,9 +64,9 @@ if [ ! -d "ventoy" ]; then
     wget -O ventoy.tar.gz "$LATEST"
 
     echo "[INFO] Extracting Ventoy..."
-    rm -rf ventoy
-    mkdir -p ventoy
-    tar -xf ventoy.tar.gz -C ventoy --strip-components=1
+rm -rf ventoy
+mkdir -p ventoy
+tar --strip-components=1 -xf ventoy.tar.gz -C ventoy
 else
     echo "[OK] Ventoy folder already exists."
 fi
