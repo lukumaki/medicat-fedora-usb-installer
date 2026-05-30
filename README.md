@@ -65,8 +65,8 @@ cd medicat-fedora-usb-installer
 ```
 
 ### 3. Run the builder
-```bash
-medicat_usb_builder.sh
+```
+bash medicat_usb_builder.sh
 ```
 
 ### 4. Follow the on-screen instructions
