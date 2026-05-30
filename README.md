@@ -179,6 +179,54 @@ Ensure the USB is properly connected and recognized by `lsblk`.
 
 ---
 
+# Fedora Patch Layer for Ventoy
+
+Fedora 40–44 removed the `mkexfatfs` binary required by Ventoy.
+This patch layer provides Fedora‑compatible wrappers for:
+
+- `Ventoy2Disk.sh`
+- `VentoyWorker.sh`
+
+## Why this is needed
+
+Ventoy fails on Fedora with:
+mkexfatfs: command not found
+Some tools can not run on current system.
+
+Fedora uses `mkfs.exfat` instead of `mkexfatfs`.
+
+These wrappers:
+
+- create a safe symlink (`mkexfatfs → mkfs.exfat`)
+- fix tool detection
+- fix partition wait timing
+- run the official Ventoy scripts with a Fedora‑compatible environment
+
+## Usage
+
+Place the files `Ventoy2Disk_fedora.sh` & `VentoyWorker_fedora.sh` next to the official Ventoy scripts `Ventoy2Disk.sh` & `tool/VentoyWorker.sh`
+
+The script can now be used as standalone for installing Ventoy in **Fedora 38+**. Replace X with your correct drive as shown in: `lsblk --nodeps --output "NAME,SIZE,VENDOR,MODEL,SERIAL"` )
+
+```bash
+sudo bash Ventoy2Disk_fedora.sh -i /dev/sdX
+```
+
+All Ventoy CLI options work normally:
+-i  install
+-I  force install
+-u  update
+-l  list
+-g  GPT mode
+-s  secure boot
+
+## Notes
+These wrappers do NOT modify Ventoy itself.
+
+They simply fix Fedora incompatibilities.
+
+They work with all future Ventoy versions.
+
 ## 🗺 Roadmap
 
 - [ ] Add AppImage version  
