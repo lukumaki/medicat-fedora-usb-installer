@@ -47,11 +47,22 @@ download_patch_if_missing "VentoyWorker_fedora.sh"
 # 3. Download Ventoy if missing
 # ---------------------------------------------------------
 if [ ! -d "ventoy" ]; then
-    echo "[INFO] Downloading Ventoy..."
-    wget -q -O ventoy.tar.gz "$VENTOY_URL"
-    mkdir -p ventoy
-    tar -xf ventoy.tar.gz -C ventoy --strip-components=1
-    rm -f ventoy.tar.gz
+    echo "[INFO] Fetching latest Ventoy version..."
+LATEST=$(curl -s https://api.github.com/repos/ventoy/Ventoy/releases/latest \
+    | grep browser_download_url \
+    | grep linux.tar.gz \
+    | cut -d '"' -f 4)
+
+if [ -z "$LATEST" ]; then
+    echo "[ERROR] Could not fetch Ventoy download URL."
+    exit 1
+fi
+
+echo "[INFO] Downloading Ventoy from:"
+echo "       $LATEST"
+
+wget -q -O ventoy.tar.gz "$LATEST"
+
 else
     echo "[OK] Ventoy folder already exists."
 fi
