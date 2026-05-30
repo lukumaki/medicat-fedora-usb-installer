@@ -49,27 +49,39 @@ download_patch_if_missing "VentoyWorker_fedora.sh"
 if [ ! -d "ventoy" ]; then
     echo "[INFO] Fetching latest Ventoy version..."
     LATEST=$(curl -s https://api.github.com/repos/ventoy/Ventoy/releases/latest \
-        | grep browser_download_url \
-        | grep linux.tar.gz \
+        | grep '"tag_name"' \
         | cut -d '"' -f 4)
 
     if [ -z "$LATEST" ]; then
-        echo "[ERROR] Could not fetch Ventoy download URL."
+        echo "[ERROR] Could not fetch Ventoy version."
         exit 1
     fi
 
-    echo "[INFO] Downloading Ventoy from:"
-    echo "       $LATEST"
+    echo "[INFO] Latest Ventoy version: $LATEST"
 
-    wget -O ventoy.tar.gz "$LATEST"
+    FILE="ventoy-${LATEST#v}-linux.tar.gz"
+    URL="https://github.com/ventoy/Ventoy/releases/download/$LATEST/$FILE"
+
+    echo "[INFO] Downloading Ventoy from:"
+    echo "       $URL"
+
+    wget -O ventoy.tar.gz "$URL"
 
     echo "[INFO] Extracting Ventoy..."
-rm -rf ventoy
-mkdir -p ventoy
-tar --strip-components=1 -xf ventoy.tar.gz -C ventoy
+    tar -xf ventoy.tar.gz
+
+    echo "[INFO] Cleaning old ventoy folder..."
+    rm -rf ventoy
+
+    echo "[INFO] Renaming extracted folder..."
+    mv ventoy-* ventoy
+
+    echo "[INFO] Cleaning tarball..."
+    rm -f ventoy.tar.gz
 else
     echo "[OK] Ventoy folder already exists."
 fi
+
 
 # ---------------------------------------------------------
 # 4. Ask user for USB device
