@@ -1,107 +1,108 @@
-# MediCat USB Builder for Fedora  
-A fully automated Ventoy + MediCat USB installer for Fedora Linux.
+### MediCat USB Builder for Fedora
+A fully automated, Fedora‑compatible Ventoy + MediCat USB installer with a clean patch‑layer architecture, improved logging, robust error handling, and automatic patch updates.
 
-This project provides:
+This project provides a reliable, repeatable, and fully automated workflow for creating a MediCat USB on Fedora systems, solving the long‑standing compatibility issues caused by Fedora’s removal of the mkexfatfs binary required by Ventoy.
 
-- A **Fedora‑compatible Ventoy installer** (via patch‑layer wrappers)
-- A **fully automated MediCat USB builder**
-- A simple **TUI‑style workflow**
-- 100% compatibility with Fedora 38–44
+## ✨ Key Features
 
----
+### ✔ Fedora Ventoy Patch Layer:
 
-## 🚀 Features
+Fedora removed mkexfatfs, breaking Ventoy’s installation scripts.
+This project includes a patch‑layer that:
 
-### ✔ Fully automated Ventoy installation  
-Fedora removed the `mkexfatfs` binary required by Ventoy.  
-This project includes a **patch layer** that:
+Creates a safe fallback (mkexfatfs → mkfs.exfat)
 
-- Creates a safe fallback (`mkexfatfs → mkfs.exfat`)
-- Fixes Ventoy tool detection
-- Fixes partition wait timing (udev delay)
-- Runs the official Ventoy scripts in a Fedora‑safe environment
+Fixes Ventoy tool PATH resolution
 
-### ✔ Fully automated MediCat extraction  
+Adds udev wait‑time improvements for Fedora
 
+Wraps Ventoy’s official scripts without modifying them
+
+The patch scripts auto‑update from the GitHub repo when missing or outdated.
+
+### ✔ Automatic Ventoy Download & Extraction
 The builder:
 
-- Detects your USB drive
-- Installs Ventoy (patched)
-- Extracts MediCat from your `~/Downloads` folder
-- Copies everything to the Ventoy partition
+Fetches the latest Ventoy release from GitHub
 
----
+Downloads the correct Linux tarball
 
-## 🧩 Fedora Ventoy Patch Layer
+Extracts it cleanly
 
-Fedora 40–44 removed the `mkexfatfs` binary required by Ventoy.  
-Ventoy fails with:
-mkexfatfs: command not found
-Some tools can not run on current system.
+Renames the extracted folder to ventoy/ (stable path)
 
-This project includes **patched wrapper scripts** that:
+Ensures compatibility with the patch‑layer wrappers
 
-- Create a fallback symlink (`mkexfatfs → mkfs.exfat`)
-- Fix PATH issues
-- Fix partition wait timing
-- Run the official Ventoy scripts safely
+This guarantees that Ventoy is always up‑to‑date and always in the correct structure.
 
-These wrappers are automatically downloaded by the builder if missing.
+### ✔ Improved Logging
+The script provides clear, color‑coded, human‑readable output:
 
----
+[INFO] for normal operations
 
-## 🛠 Installation
+[OK] for successful checks
 
-### 1. Clone the repo
+[ERROR] for fatal issues
 
-```bash
-git clone https://github.com/lukumaki/medicat-fedora-usb-installer
-cd medicat-fedora-usb-installer
-```
+[WARNING] for destructive operations
 
-### 2. Place your MediCat package in:
-```
-~/Downloads/MediCat*.7z
-```
+This makes debugging and user experience significantly better.
 
-### 3. Run the builder
-```
-bash medicat_usb_builder.sh
-```
+### ✔ Improved Error Handling
+The builder uses:
 
-### 4. Follow the on-screen instructions
-The script will:
+set -e for immediate failure on errors
 
-Download Ventoy
+explicit checks for missing binaries
 
-Download Fedora patches (if missing)
+safe fallback logic
 
-Install Ventoy on your USB
+validation of USB device paths
 
-Extract MediCat onto the Ventoy partition
+validation of MediCat archive presence
 
-## 🧪 Supported Fedora Versions
-Fedora 38
+safe mount/umount operations
 
-Fedora 39
+If something goes wrong, the script stops cleanly and tells the user exactly why.
 
-Fedora 40
+### ✔ Automatic Patch Script Updates
+The builder checks the GitHub repo for:
 
-Fedora 41
+Ventoy2Disk_fedora.sh
 
-Fedora 42
+VentoyWorker_fedora.sh
 
-Fedora 43
+If they are missing or outdated, they are automatically downloaded and replaced.
 
-Fedora 44
+This ensures the Fedora patch‑layer is always current.
+
+### ✔ Clean Code Formatting
+The script is structured into clear sections:
+
+Dependency installation
+
+Patch‑layer update
+
+Ventoy download + extraction
+
+USB device selection
+
+Ventoy installation
+
+MediCat extraction
+
+Cleanup
+
+Indentation, spacing, and function layout follow a consistent style for readability and maintainability.
+
+### ✔ Version Header
+The script includes a clean header:
+# MediCat USB Builder for Fedora (with Ventoy Fedora Patch Layer)
+# Author: Frixos + Copilot
+# Version: 1.1-fedorapatch
+
+No version inflation — just a clear identifier for the initial stable release.
 
 ## 📜 License
 MIT License
 This project includes wrapper scripts for Ventoy, which is GPLv3.
-
-## ❤️ Credits
-Ventoy project (GPLv3)
-
-MediCat project
-
-Fedora community
