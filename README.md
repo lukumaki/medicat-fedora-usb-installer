@@ -95,14 +95,13 @@ Cleanup
 
 Indentation, spacing, and function layout follow a consistent style for readability and maintainability.
 
-### ✔ Version Header
-The script includes a clean header:
-# MediCat USB Builder for Fedora (with Ventoy Fedora Patch Layer)
-# Author: Frixos + Copilot
-# Version: 1.1-fedorapatch
-
-No version inflation — just a clear identifier for the initial stable release.
-
 ## 📜 License
 MIT License
 This project includes wrapper scripts for Ventoy, which is GPLv3.
+
+---
+### ✔ Version Header
+The script includes a clean header:
+MediCat USB Builder for Fedora (with Ventoy Fedora Patch Layer)
+No version inflation — just a clear identifier for the initial stable release.
+
