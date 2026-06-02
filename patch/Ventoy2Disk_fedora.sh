@@ -24,4 +24,4 @@ export PATH="$ROOT_DIR/ventoy/tool/mips64el:$PATH"
 export PATH="$ROOT_DIR/ventoy/tool/i386:$PATH"
 
 echo "[Fedora Patch] Running official Ventoy2Disk.sh..."
-exec bash "$ROOT_DIR/ventoy/Ventoy2Disk.sh" "$@"
+exec bash "$ROOT_DIR/ventoy/Ventoy2Disk.sh -I" "$@"
