@@ -27,16 +27,34 @@ As a Fedora 44 user, I discovered that the official MediCat installer:
 
 👉 https://github.com/mon5termatt/medicat_installer  
 
-…although updated 6 months ago with Fedora notes, **did not work on Fedora 44**.
+…although updated with Fedora notes, **did not work on Fedora 40–44**.
 
-The root causes were:
+## 🧠 Summary of the Fedora issue
 
-- Missing required packages (`ntfs-3g`, `exfatprogs`, `p7zip-plugins`)  
-- Ventoy’s Linux installer failing on Fedora due to glibc/tooling differences  
-- The Ventoy worker script not being compatible with Fedora  
-- The official script not including Fedora‑specific patches  
+- Ventoy requires `mkexfatfs`
+- Fedora removed it
+- Ventoy fails its internal checks
+- The official MediCat installer cannot proceed
+- The Fedora Patch Layer restores compatibility
+- Ventoy installs correctly again
+- MediCat USB creation works flawlessly on Fedora 40–44
+- 
+### ❌ Fedora removed the `mkexfatfs` binary required by Ventoy  
+Ventoy depends on `mkexfatfs` for formatting and validation.  
+Fedora 40–44 removed this binary and replaced it with:
 
-This made it impossible to create a working MediCat USB on Fedora without manual intervention.
+```
+mkfs.exfat
+```
+
+This caused Ventoy to fail with:
+
+```
+mkexfatfs: command not found
+Some tools can not run on current system.
+```
+
+Because of this, Ventoy’s internal checks failed, and the installer aborted.
 
 This project solves that.
 
@@ -44,29 +62,31 @@ This project solves that.
 
 ## 🧠 How I solved it (reasoning & process)
 
-### 1. Identifying the failure  
-Running the official *Medicat_Installer.sh* on Fedora 44 resulted in:
+To fix this, the project includes a **🛠 Fedora Patch Layer for Ventoy**:
 
-- Ventoy installer errors  
-- Missing filesystem tools  
-- Extraction failures  
-- Incomplete USB creation  
-
-### 2. Investigating Ventoy  
-I analyzed:
-
-- https://www.ventoy.net/  
-- https://github.com/ventoy/Ventoy  
-
-I discovered that Ventoy requires **Fedora‑specific patches** to run correctly.
-
-### 3. Integrating Fedora Ventoy patches  
-I added:
-
-- `Ventoy2Disk_fedora.sh`  
+- `Ventoy2Disk_fedora.sh`
 - `VentoyWorker_fedora.sh`
 
-These scripts allow Ventoy to install correctly on Fedora.
+These wrappers:
+
+### ✔ Create a safe symlink  
+```
+mkexfatfs → mkfs.exfat
+```
+
+### ✔ Fix Ventoy tool detection  
+Ventoy now believes the required tools exist and proceeds normally.
+
+### ✔ Fix partition wait timing  
+Fedora’s udev timing differs from Debian/Ubuntu, causing Ventoy to wait incorrectly.
+
+### ✔ Run the official Ventoy scripts in a Fedora‑compatible environment  
+The wrappers do **not** modify Ventoy itself — they simply adapt the environment.
+
+### ✔ Work with all future Ventoy versions  
+Because the symlink and wrapper logic are version‑agnostic.
+
+---
 
 ### 4. Creating a unified logging system  
 With consistent color‑coded output:
@@ -100,24 +120,29 @@ Automatic unmount on exit ensures no corrupted USB states.
 
 ---
 
-## 🧑‍💻 Credits
+## 🧑‍💻 Credits (updated)
+
+### 🔹 Fedora Patch Layer  
+Created to restore Ventoy compatibility on Fedora 40–44 by:
+
+- Replacing missing `mkexfatfs` with a symlink to `mkfs.exfat`
+- Fixing Ventoy worker timing
+- Ensuring the official Ventoy scripts run without modification
 
 ### 🔹 Ventoy Project  
-- Website: https://www.ventoy.net/  
-- GitHub: https://github.com/ventoy/Ventoy  
-Ventoy makes MediCat USB possible.
+https://www.ventoy.net/  
+https://github.com/ventoy/Ventoy  
 
 ### 🔹 MediCat USB  
-- Website: https://medicatusb.com/  
-The best Windows PE toolkit available.
+https://medicatusb.com/
 
 ### 🔹 mon5termatt (MediCat Installer)  
-- GitHub: https://github.com/mon5termatt/medicat_installer  
-Their project inspired the mirror selection logic and cdn.bat parsing.  
-This project is a **Fedora‑specific re‑implementation**, not a fork.
+https://github.com/mon5termatt/medicat_installer  
+Provided the mirror selection logic and cdn.bat parsing.
 
 ### 🔹 lukumaki (Project Author)  
-Discovered the Fedora 44 incompatibility, debugged the Ventoy installer, tested BIOS/UEFI boot, and built the first fully working **Fedora‑compatible MediCat USB Builder**.
+Identified the Fedora 44 incompatibility, implemented the patch layer,  
+and built the first fully working **Fedora‑compatible MediCat USB Builder**.
 
 ---
 
