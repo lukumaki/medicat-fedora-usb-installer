@@ -8,41 +8,32 @@ This project adheres to semantic versioning where possible.
 ### Professional Clean Build (B3)
 
 #### Added
-- Unified logging engine with color‑coded output (`INFO`, `OK`, `WARN`, `ERROR`).
-- Unified output functions (`out`, `prompt`, `YesNo`) replacing legacy `colEcho`.
-- Fedora‑compatible Ventoy installation logic with auto‑detection of existing Ventoy.
+- Fedora Patch Layer for Ventoy:
+  - Fedora 40–44 removed the `mkexfatfs` binary required by Ventoy.
+  - Added compatibility wrappers (`Ventoy2Disk_fedora.sh`, `VentoyWorker_fedora.sh`).
+  - Added safe symlink (`mkexfatfs → mkfs.exfat`).
+  - Fixed Ventoy tool detection and partition wait timing.
+  - Ensures Ventoy installs correctly on all Fedora versions.
+- Unified logging engine with color‑coded output.
+- Unified output functions (`out`, `prompt`, `YesNo`).
 - New CLI flags:
-  - `--skip-ventoy` — keeps existing Ventoy installation.
-  - `--skip-medicat` — skips MediCat formatting/copying.
-  - `--update-only` — incremental update mode using `rsync --update`.
-  - `--force-mbr` — force MBR partitioning.
-  - `--force-gpt` — force GPT partitioning.
-- Smart rsync update mode (copies only new/modified files).
-- Progress bars:
-  - 7z extraction (`-bsp1`)
-  - rsync (`--info=progress2`)
+  - `--skip-ventoy`, `--skip-medicat`, `--update-only`, `--force-mbr`, `--force-gpt`.
+- Smart rsync update mode (`rsync --update`).
+- Progress bars for 7z extraction and rsync.
 - Automatic cleanup trap (auto‑unmount on exit).
-- Improved USB selection flow with safer prompts.
-- Complete rewrite of `install_ventoy_and_format()` for clarity and reliability.
-- Full README rewrite (international English version).
-- Added credits to Ventoy, MediCat USB, and mon5termatt.
-- Added Fedora 44 compatibility notes and debugging story.
+- Improved USB selection flow.
 
 #### Changed
-- Replaced all legacy logging (`log`, `colEcho`) with unified logging system.
-- Replaced old Ventoy validation logic with output‑based success detection.
-- Reworked MediCat extraction logic with progress and caching.
+- Reworked Ventoy installation logic to use Fedora patch layer.
+- Replaced legacy logging and color functions.
+- Improved MediCat extraction and caching.
 - Cleaned up directory structure and variable naming.
-- Improved error handling and exit conditions.
-- Removed duplicated or conflicting code blocks from v4.0.
 
 #### Fixed
-- Ventoy installer failing on Fedora due to missing patches.
-- Missing dependencies (`ntfs-3g`, `exfatprogs`, `p7zip-plugins`) causing extraction and formatting failures.
+- Ventoy failing on Fedora due to missing `mkexfatfs`.
+- Missing dependencies (`ntfs-3g`, `exfatprogs`, `p7zip-plugins`) causing extraction/formatting issues.
 - Old rsync logic overwriting entire USB unnecessarily.
-- Duplicate `install_ventoy_and_format()` definitions.
-- Residual debug blocks from v4.0.
-- Inconsistent color output and raw escape sequences.
+- Duplicate function definitions and leftover debug code.
 
 ---
 
