@@ -27,7 +27,11 @@
 </p>
 
 # MediCat USB Builder for Fedora  
-### Ventoy‑based USB creation with smart caching, update‑only mode & Fedora‑compatible patches  
+### MediCat USB Builder for Fedora is a fully automated, Fedora‑compatible tool for creating a Ventoy‑based MediCat USB drive.  
+### It includes a complete Ventoy patch layer for Fedora 40–44, unified logging, update‑only mode, smart SSD caching, progress bars, and full BIOS/UEFI boot support.
+### This project exists because the official MediCat installer does not work on Fedora due to the removal of the `mkexfatfs` binary.  
+### The included Fedora Patch Layer restores full Ventoy compatibility without modifying Ventoy itself. 
+
 **Version 4.1 — Professional Clean Build**
 
 ---
