@@ -1,3 +1,31 @@
+<p align="center">
+
+  <!-- Version -->
+  <img src="https://img.shields.io/badge/version-4.1-blue.svg" alt="Version">
+
+  <!-- License -->
+  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+
+  <!-- Fedora -->
+  <img src="https://img.shields.io/badge/Fedora-40--44-blue?logo=fedora&logoColor=white" alt="Fedora Compatibility">
+
+  <!-- Ventoy -->
+  <img src="https://img.shields.io/badge/Ventoy-Compatible-success?logo=linux&logoColor=white" alt="Ventoy Compatible">
+
+  <!-- Shell -->
+  <img src="https://img.shields.io/badge/shell-bash-121011.svg?logo=gnu-bash&logoColor=white" alt="Shell Script">
+
+  <!-- GitHub Stars -->
+  <img src="https://img.shields.io/github/stars/lukumaki/medicat-fedora-usb-installer?style=social" alt="GitHub Stars">
+
+  <!-- GitHub Issues -->
+  <img src="https://img.shields.io/github/issues/lukumaki/medicat-fedora-usb-installer" alt="GitHub Issues">
+
+  <!-- Last Commit -->
+  <img src="https://img.shields.io/github/last-commit/lukumaki/medicat-fedora-usb-installer" alt="Last Commit">
+
+</p>
+
 # MediCat USB Builder for Fedora  
 ### Ventoy‑based USB creation with smart caching, update‑only mode & Fedora‑compatible patches  
 **Version 4.1 — Professional Clean Build**
