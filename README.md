@@ -155,7 +155,7 @@ Mirror 3: 1.8 MB/s
 
 ---
 
-## 🔧 Advanced Flags
+## 🔧 All Available Flags
 
 | Flag | Purpose | Example |
 |------|---------|---------|
@@ -167,80 +167,6 @@ Mirror 3: 1.8 MB/s
 | `--dry-run` | Preview without changes | `./medicat_usb_builder.sh --dry-run` |
 | `--verbose` | Show debug output | `./medicat_usb_builder.sh --verbose` |
 | `--quiet` | Suppress output | `./medicat_usb_builder.sh --quiet` |
-
----
-
-## 🛠 How It Works
-
-### Build B4 Improvements
-
-**🔴 Critical Fixes:**
-- ✅ Log file initialized after cache directory creation
-- ✅ Error handling with proper return codes throughout
-- ✅ Temporary directory cleanup with RETURN trap
-- ✅ Safe glob expansion using `find` instead of `ls`
-- ✅ Mount status validation before unmounting
-- ✅ All critical commands verified for success
-
-**✅ Enhanced Error Handling:**
-- ✅ Download verification (curl, wget)
-- ✅ Archive extraction validation (tar, 7z)
-- ✅ File move confirmation
-- ✅ Better error messages with log file paths
-- ✅ USB device validation
-
-**✨ New Features:**
-- ✅ `--dry-run` mode for previews
-- ✅ `--verbose` mode for debugging
-- ✅ `--quiet` mode for silent operation
-- ✅ `log_debug()` function for detailed logging
-- ✅ `check_system_dependencies()` upfront validation
-- ✅ USB removable media verification
-- ✅ Mirror speed display (MB/s)
-
-**🛠 Code Quality:**
-- ✅ Modular function design
-- ✅ `mountpoint` command for safer checks
-- ✅ Graceful error handling
-- ✅ Better progress indicators (dot:giga)
-- ✅ Trap INT/TERM signals
-- ✅ Early returns on failure
-
-**📝 Logging & Debugging:**
-- ✅ Timestamps on all messages
-- ✅ Consistent color-coded output
-- ✅ Mirror speeds and URLs logged
-- ✅ Log file location in errors
-- ✅ Quiet mode respects all settings
-
----
-
-## 📂 Directory Structure
-
-### Repository Files
-```
-medicat-fedora-usb-installer/
-├── medicat_usb_builder.sh      # Main installer script (v4.1 B4)
-├── patch/                      # Fedora compatibility layer
-│   ├── Ventoy2Disk_fedora.sh   # Ventoy wrapper for Fedora
-│   ├── VentoyWorker_fedora.sh  # Ventoy worker wrapper
-│   └── README_fedora_patch.md  # Patch documentation
-├── README.md                   # This file
-├── CHANGELOG.md                # Version history
-└── LICENSE                     # MIT License
-```
-
-### Cache Directories (Auto-Created in HOME)
-```
-~/Medicat_USB_Cache/
-├── Medicat.USB.vXX.XX.7z       # Downloaded archive (~28 GB)
-├── extracted/                  # Extracted files (~28 GB)
-├── ventoy/                     # Ventoy release (20–30 MB)
-├── patch/                      # Fedora patches
-└── medicat_usb_builder.log     # Installation log
-```
-
-**Safe to delete anytime** — everything will be re-downloaded/recreated automatically.
 
 ---
 
@@ -379,25 +305,7 @@ Restores Ventoy compatibility on Fedora 40–44 by:
 
 ## 📝 Version History
 
-### Version 4.1 Build B4 (Latest)
-- ✨ Added `--dry-run`, `--verbose`, `--quiet` flags
-- ✨ Enhanced error handling with return codes
-- ✨ Better logging and debugging
-- ✨ USB removable media verification
-- ✨ Mirror speed testing and display
-- ✨ Improved code quality and modularity
-
-### Version 4.1 Build B3
-- Unified logging with color-coded output
-- Smart SSD caching for MediCat
-- Update-only mode with rsync
-- Progress bars for extraction and copy
-- BIOS/UEFI boot support
-
-### Version 4.0
-- Initial release with Fedora Patch Layer
-- Ventoy + format + copy automation
-- Cache system for faster updates
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history, improvements, and migration guides.
 
 ---
 
