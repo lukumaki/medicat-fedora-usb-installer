@@ -1,6 +1,6 @@
 #!/bin/bash
 # MediCat USB Builder for Fedora (Ventoy + Smart Cache)
-# Version: 4.4 (Professional Clean Build - B7)
+# Version: 5.0
 # Author: Frixos + Copilot
 
 set -euo pipefail
@@ -122,7 +122,7 @@ init_logging() {
 show_banner() {
   echo ""
   echo "=============================================="
-  echo "  MediCat USB Builder for Fedora (v4.4)"
+  echo "  MediCat USB Builder for Fedora v5.0"
   echo "=============================================="
   echo ""
   [ "$DRY_RUN" -eq 1 ] && echo "⚠️  DRY RUN MODE - No changes will be made"
@@ -677,4 +677,3 @@ if [ "$SKIP_VENTOY" -eq 0 ] || [ "$SKIP_MEDICAT" -eq 0 ]; then
 else
   log_ok "Installation skipped. Cache prepared for future use."
 fi
-
