@@ -180,45 +180,163 @@ and built the first fully working **Fedora‑compatible MediCat USB Builder**.
 
 ## ⚙️ Installation & Usage
 
-### Full installation (Ventoy + format + full copy)
+There are **two recommended ways** to run the MediCat USB Builder for Fedora:
+
+---
+
+# 🟦 Method 1 — Clone the Repository (recommended for developers)
+
+This method is ideal if you want to:
+
+- inspect or modify the code  
+- contribute to the project  
+- keep a local copy of the installer  
+
+### Clone the repository:
+
+```bash
+git clone "https://github.com/lukumaki/medicat-fedora-usb-installer.git"
+cd medicat-fedora-usb-installer
+chmod +x medicat_usb_builder.sh
 ```
+
+### Run the installer:
+
+```bash
 ./medicat_usb_builder.sh
 ```
 
-### Skip Ventoy (keep existing Ventoy, rewrite MediCat)
+---
+
+# 🟩 Method 2 — One‑Line Installer (recommended for most users)
+
+This method downloads and runs the latest version of the installer **without cloning the repo**.
+
+### Run directly from GitHub:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/lukumaki/medicat-fedora-usb-installer/main/medicat_usb_builder.sh)
 ```
+
+### Important notes about this method:
+
+- It **does** save files locally (Ventoy + MediCat USB).
+- It creates and uses the following directories:
+
+```
+~/Medicat_USB_Cache/           # Stores MediCat archive (≈ 28 GB)
+~/Medicat_USB_Cache/extracted/ # Extracted MediCat files (≈ 28 GB)
+~/Medicat_USB_Cache/ventoy/    # Downloaded Ventoy release
+```
+
+- These files remain on your system for:
+  - faster updates  
+  - avoiding re‑downloads  
+  - incremental rsync mode  
+
+---
+
+# 🟥 ⚠️ MediCat USB Size & Time Requirements
+
+The MediCat USB archive is **~28 GB**.
+
+Depending on your system:
+
+### Download time  
+- Fast fiber: 5–10 minutes  
+- Average broadband: 20–40 minutes  
+- Slow connections: 1+ hour  
+
+### Extraction time  
+- SSD: 3–6 minutes  
+- HDD: 10–20 minutes  
+
+### USB copy time  
+- USB 3.0 stick: 10–25 minutes  
+- USB 2.0 stick: 30–60 minutes  
+- SSD enclosure: 3–8 minutes  
+
+Because of this, the installer includes:
+
+- **7z extraction progress bar** (`-bsp1`)
+- **rsync global progress bar** (`--info=progress2`)
+
+So the user always knows how far the process has progressed.
+
+---
+
+# 🟧 Available Flags
+
+You can combine the installer with optional flags:
+
+### Full installation (Ventoy + format + full copy)
+```bash
+./medicat_usb_builder.sh
+```
+
+### Skip Ventoy (keep existing Ventoy installation)
+```bash
 ./medicat_usb_builder.sh --skip-ventoy
 ```
 
-### Update‑only (copy only new/modified files)
-```
+### Update‑only mode (copy only new/modified files)
+```bash
 ./medicat_usb_builder.sh --update-only
 ```
 
-### Force MBR
-```
+### Force MBR partitioning
+```bash
 ./medicat_usb_builder.sh --force-mbr
 ```
 
-### Force GPT
-```
+### Force GPT partitioning
+```bash
 ./medicat_usb_builder.sh --force-gpt
 ```
 
 ---
 
+# 🟪 Notes
+
+- The installer supports both **BIOS** and **UEFI** boot modes.
+- The Fedora Patch Layer ensures Ventoy works correctly on Fedora 40–44.
+- The cache directory (`~/Medicat_USB_Cache`) can be safely deleted at any time.
+
+---
+
 ## 📂 Directory Structure
+
+The repository itself remains clean and lightweight:
 
 ```
 medicat_usb_builder.sh
 patch/
   Ventoy2Disk_fedora.sh
   VentoyWorker_fedora.sh
-ventoy/
-Medicat_USB_Cache/
-  *.7z
-  extracted/
+  README_fedora_patch.md
+README.md
+CHANGELOG.md
+LICENSE
 ```
+
+The installer automatically creates and uses the following directories in your HOME folder:
+
+```
+~/Medicat_USB_Cache/
+│
+├── Medicat.USB.vXX.XX.7z        # Downloaded MediCat archive (~28 GB)
+├── extracted/                   # Extracted MediCat files (~28 GB)
+└── ventoy/                      # Downloaded Ventoy release (20–30 MB)
+```
+
+These directories are used for:
+
+- caching MediCat USB to avoid re‑downloads  
+- storing extracted files for faster updates  
+- storing the Ventoy release used during installation  
+
+You may safely delete `~/Medicat_USB_Cache` at any time — the installer will recreate it automatically.
+
 
 ---
 
