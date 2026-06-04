@@ -256,7 +256,17 @@ select_usb() {
 
   [ ! -b "$TARGET" ] && log_error "$TARGET does not exist." && exit 1
 
-  YesNo "Install MediCat to $TARGET ?" || exit 0
+  echo ""
+  echo "Install MediCat to $TARGET ? (y/N)"
+  echo "(type 'yes' only for fresh/full installation,"
+  echo " for all other flags type No or press Enter)"
+  echo ""
+
+  read -rp "> " ans
+  case "$ans" in
+      yes|YES|Yes|y|Y) ;;  # proceed
+      *) echo "Aborted by user."; exit 0 ;;
+  esac
 }
 
 # ---------------------------------------------------------
@@ -328,6 +338,25 @@ install_ventoy_and_format() {
   else
     sudo umount "$TARGET" 2>/dev/null || true
     sudo umount "${TARGET}1" 2>/dev/null || true
+    
+    echo ""
+    echo "⚠ WARNING: You are about to FORMAT $PART_DATA"
+    echo "This will ERASE ALL DATA on the USB drive."
+    echo ""
+    echo "To continue, type: FORMAT"
+    echo "To cancel, press Enter."
+    echo ""
+
+    read -rp "> " confirm_format
+    case "$confirm_format" in
+        FORMAT) 
+            echo "Proceeding with format..."
+            ;;
+        *)
+            echo "Format cancelled by user."
+            exit 0
+            ;;
+    esac
 
     out "Formatting $PART_DATA as NTFS..."
     sudo mkntfs --fast --label Medicat "$PART_DATA"
