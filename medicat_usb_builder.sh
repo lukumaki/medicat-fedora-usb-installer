@@ -11,14 +11,13 @@ set -euo pipefail
 REPO_URL="https://github.com/lukumaki/medicat-fedora-usb-installer"
 PATCH_URL="$REPO_URL/raw/main/patch"
 
-PATCH_DIR="./patch"
-
-# Ventoy + MediCat cache stored in HOME
+# Patches + Ventoy + MediCat cache stored in HOME
 MEDICAT_DIR="$HOME/Medicat_USB_Cache"
 VENTOY_DIR="$MEDICAT_DIR/ventoy"
+PATCH_DIR="$MEDICAT_DIR/patch"
 
 MNT_DIR="/mnt/medicat"
-LOG_FILE="$PWD/medicat_usb_builder.log"
+LOG_FILE="$MEDICAT_DIR/medicat_usb_builder.log"
 
 
 # ---------------------------------------------------------
