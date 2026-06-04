@@ -1,7 +1,8 @@
 <p align="center">
 
- <!-- Badges -->
-  <img src="https://img.shields.io/badge/version-4.1-blue.svg" alt="Version">
+  <!-- Badges -->
+  <img src="https://img.shields.io/badge/version-4.1--B4-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/build-Professional--Clean-brightgreen.svg" alt="Build Status">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/Fedora-40--44-blue?logo=fedora&logoColor=white" alt="Fedora Compatibility">
   <img src="https://img.shields.io/badge/Ventoy-Compatible-success?logo=linux&logoColor=white" alt="Ventoy Compatible">
@@ -9,363 +10,435 @@
   <img src="https://img.shields.io/github/stars/lukumaki/medicat-fedora-usb-installer?style=social" alt="GitHub Stars">
   <img src="https://img.shields.io/github/issues/lukumaki/medicat-fedora-usb-installer" alt="GitHub Issues">
   <img src="https://img.shields.io/github/last-commit/lukumaki/medicat-fedora-usb-installer" alt="Last Commit">
-    <!-- Spacer -->
-  <br><br>  
-  <!-- Project Logos -->
-  <img src="assets/logo/medicat_logo.png" width="120" alt="MediCat Logo">
-  <img src="assets/logo/ventoy_logo.png" width="120" alt="Ventoy Logo">
-  <img src="assets/logo/fedora_logo.png" width="120" alt="Fedora Logo">
-  <!-- Spacer -->
-  <br><br>
+
 </p>
 
-# MediCat USB Builder for Fedora  
-### MediCat USB Builder for Fedora is a fully automated, Fedora‑compatible tool for creating a Ventoy‑based MediCat USB drive.  
-### It includes a complete Ventoy patch layer for Fedora 40–44, unified logging, update‑only mode, smart SSD caching, progress bars, and full BIOS/UEFI boot support.
-### This project exists because the official MediCat installer does not work on Fedora due to the removal of the `mkexfatfs` binary.  
-### The included Fedora Patch Layer restores full Ventoy compatibility without modifying Ventoy itself. 
+# 🔥 MediCat USB Builder for Fedora
 
-**Version 4.1 — Professional Clean Build**
+### Fully automated, production-ready tool for creating Ventoy-based MediCat USB drives on Fedora Linux.
+
+**Version 4.1 Build B4** — Professional Clean Build with Enhanced Error Handling & New Features
 
 ---
 
-## 📌 Overview
+## ✨ Key Features
 
-**MediCat USB Builder for Fedora** is a fully automated tool that creates a **Ventoy‑based MediCat USB** on Fedora Linux (and derivatives).  
-It supports:
-
-- Full installation (Ventoy + format + full copy)  
-- Skip‑Ventoy mode  
-- Update‑only mode (copy only new/modified files)  
-- Smart SSD cache for MediCat  
-- Progress bars (7z extraction + rsync)  
-- Automatic cleanup (unmount on exit)  
-- Fedora‑patched Ventoy installer  
-
-This project was created because the official *Medicat_Installer.sh* does not work reliably on **Fedora 44+**, despite notes on GitHub suggesting Fedora compatibility.
-
----
-
-## 🧩 Why this project exists
-
-As a Fedora 44 user, I discovered that the official MediCat installer:
-
-👉 https://github.com/mon5termatt/medicat_installer  
-
-…although updated with Fedora notes, **did not work on Fedora 40–44**.
-
-## 🧠 Summary of the Fedora issue
-
-- Ventoy requires `mkexfatfs`
-- Fedora removed it
-- Ventoy fails its internal checks
-- The official MediCat installer cannot proceed
-- The Fedora Patch Layer restores compatibility
-- Ventoy installs correctly again
-- MediCat USB creation works flawlessly on Fedora 40–44
-- 
-### ❌ Fedora removed the `mkexfatfs` binary required by Ventoy  
-Ventoy depends on `mkexfatfs` for formatting and validation.  
-Fedora 40–44 removed this binary and replaced it with:
-
-```
-mkfs.exfat
-```
-
-This caused Ventoy to fail with:
-
-```
-mkexfatfs: command not found
-Some tools can not run on current system.
-```
-
-Because of this, Ventoy’s internal checks failed, and the installer aborted.
-
-This project solves that.
+- ✅ **Full automation** — Ventoy + format + MediCat copy in one command
+- ✅ **Smart caching** — Download once, install infinitely (28 GB cached)
+- ✅ **Update-only mode** — 30 min → 30 sec for incremental updates
+- ✅ **Dry-run mode** — Preview operations without making changes
+- ✅ **Verbose debugging** — Detailed output for troubleshooting
+- ✅ **Quiet mode** — Suppress all non-critical output
+- ✅ **Error handling** — Proper error recovery and validation
+- ✅ **Progress tracking** — Real-time progress bars (7z + rsync)
+- ✅ **BIOS/UEFI support** — MBR and GPT partitioning
+- ✅ **USB safety checks** — Removable media verification
+- ✅ **Fedora-patched Ventoy** — Works on Fedora 40–44 without issues
 
 ---
 
-## 🧠 How I solved it (reasoning & process)
+## 📋 Why This Project Exists
 
-To fix this, the project includes a **🛠 Fedora Patch Layer for Ventoy**:
+The official MediCat installer doesn't work on Fedora 40–44 because **Fedora removed the `mkexfatfs` binary** that Ventoy requires.
 
-- `Ventoy2Disk_fedora.sh`
-- `VentoyWorker_fedora.sh`
+### The Problem
 
-These wrappers:
+| Issue | Result |
+|-------|--------|
+| Ventoy needs `mkexfatfs` | ❌ Removed in Fedora 40+ |
+| Fedora uses `mkfs.exfat` | ❌ Ventoy doesn't recognize it |
+| Tool check fails | ❌ Installer aborts |
 
-### ✔ Create a safe symlink  
-```
-mkexfatfs → mkfs.exfat
-```
+### The Solution
 
-### ✔ Fix Ventoy tool detection  
-Ventoy now believes the required tools exist and proceeds normally.
-
-### ✔ Fix partition wait timing  
-Fedora’s udev timing differs from Debian/Ubuntu, causing Ventoy to wait incorrectly.
-
-### ✔ Run the official Ventoy scripts in a Fedora‑compatible environment  
-The wrappers do **not** modify Ventoy itself — they simply adapt the environment.
-
-### ✔ Work with all future Ventoy versions  
-Because the symlink and wrapper logic are version‑agnostic.
-
----
-
-### 4. Creating a unified logging system  
-With consistent color‑coded output:
-
-- **[INFO]** → yellow  
-- **[OK]** → green  
-- **[WARN]/[ERROR]** → red  
-- Default output → blue  
-
-### 5. Implementing a smart cache system  
-The MediCat archive (28GB) is stored in:
-
-```
-~/Medicat_USB_Cache
-```
-
-Extraction happens **only once**, dramatically speeding up future updates.
-
-### 6. Adding update‑only mode  
-Using:
-
-```
-rsync --update
-```
-
-Only new or modified files are copied.  
-This reduces update time from **30 minutes → 30 seconds**.
-
-### 7. Adding cleanup trap  
-Automatic unmount on exit ensures no corrupted USB states.
-
----
-
-## 🧑‍💻 Credits (updated)
-
-### 🔹 Fedora Patch Layer  
-Created to restore Ventoy compatibility on Fedora 40–44 by:
-
-- Replacing missing `mkexfatfs` with a symlink to `mkfs.exfat`
-- Fixing Ventoy worker timing
-- Ensuring the official Ventoy scripts run without modification
-
-### 🔹 Ventoy Project  
-https://www.ventoy.net/  
-https://github.com/ventoy/Ventoy  
-
-### 🔹 MediCat USB  
-https://medicatusb.com/
-
-### 🔹 mon5termatt (MediCat Installer)  
-https://github.com/mon5termatt/medicat_installer  
-Provided the mirror selection logic and cdn.bat parsing.
-
-### 🔹 lukumaki (Project Author)  
-Identified the Fedora 44 incompatibility, implemented the patch layer,  
-and built the first fully working **Fedora‑compatible MediCat USB Builder**.
-
----
-
-## ⚙️ Installation & Usage
-
-There are **two recommended ways** to run the MediCat USB Builder for Fedora:
-
----
-
-# 🟦 Method 1 — Clone the Repository (recommended for developers)
-
-This method is ideal if you want to:
-
-- inspect or modify the code  
-- contribute to the project  
-- keep a local copy of the installer  
-
-### Clone the repository:
+This project includes a **Fedora Patch Layer** that creates a safe symlink and fixes environment timing:
 
 ```bash
-git clone "https://github.com/lukumaki/medicat-fedora-usb-installer.git"
-cd medicat-fedora-usb-installer
-chmod +x medicat_usb_builder.sh
-```
-
-### Run the installer:
-
-```bash
-./medicat_usb_builder.sh
+mkexfatfs → mkfs.exfat  # Safe symlink
+# Ventoy now works perfectly on Fedora!
 ```
 
 ---
 
-# 🟩 Method 2 — One‑Line Installer (recommended for most users)
+## 🚀 Quick Start
 
-This method downloads and runs the latest version of the installer **without cloning the repo**.
-
-### Run directly from GitHub:
+### Method 1: One-Line Installation (Recommended)
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/lukumaki/medicat-fedora-usb-installer/main/medicat_usb_builder.sh)
 ```
 
-### Important notes about this method:
+### Method 2: Clone & Modify (For Developers)
 
-- It **does** save files locally (Ventoy + MediCat USB).
-- It creates and uses the following directories:
-
-```
-~/Medicat_USB_Cache/           # Stores MediCat archive (≈ 28 GB)
-~/Medicat_USB_Cache/extracted/ # Extracted MediCat files (≈ 28 GB)
-~/Medicat_USB_Cache/ventoy/    # Downloaded Ventoy release
-```
-
-- These files remain on your system for:
-  - faster updates  
-  - avoiding re‑downloads  
-  - incremental rsync mode  
-
----
-
-# 🟥 ⚠️ MediCat USB Size & Time Requirements
-
-The MediCat USB archive is **~28 GB**.
-
-Depending on your system:
-
-### Download time  
-- Fast fiber: 5–10 minutes  
-- Average broadband: 20–40 minutes  
-- Slow connections: 1+ hour  
-
-### Extraction time  
-- SSD: 3–6 minutes  
-- HDD: 10–20 minutes  
-
-### USB copy time  
-- USB 3.0 stick: 10–25 minutes  
-- USB 2.0 stick: 30–60 minutes  
-- SSD enclosure: 3–8 minutes  
-
-Because of this, the installer includes:
-
-- **7z extraction progress bar** (`-bsp1`)
-- **rsync global progress bar** (`--info=progress2`)
-
-So the user always knows how far the process has progressed.
-
----
-
-# 🟧 Available Flags
-
-You can combine the installer with optional flags:
-
-### Full installation (Ventoy + format + full copy)
 ```bash
+git clone https://github.com/lukumaki/medicat-fedora-usb-installer.git
+cd medicat-fedora-usb-installer
+chmod +x medicat_usb_builder.sh
 ./medicat_usb_builder.sh
 ```
 
-### Skip Ventoy (keep existing Ventoy installation)
-```bash
-./medicat_usb_builder.sh --skip-ventoy
-```
+---
 
-### Update‑only mode (copy only new/modified files)
+## 🎯 Usage Examples
+
+### Full Installation (Fresh USB)
+```bash
+./medicat_usb_builder.sh
+```
+Downloads Ventoy, formats USB, copies MediCat.
+
+### Update Existing USB (30 seconds)
 ```bash
 ./medicat_usb_builder.sh --update-only
 ```
+Copies only new/modified files using rsync.
 
-### Force MBR partitioning
+### Skip Ventoy (Keep Existing)
 ```bash
-./medicat_usb_builder.sh --force-mbr
+./medicat_usb_builder.sh --skip-ventoy
+```
+Useful if Ventoy is already installed.
+
+### Preview Without Changes (Dry Run)
+```bash
+./medicat_usb_builder.sh --dry-run
+```
+Shows what would happen without making changes.
+
+### Debug Mode (Verbose Output)
+```bash
+./medicat_usb_builder.sh --verbose
+```
+Detailed output showing mirrors, speeds, and status.
+
+### Quiet Mode
+```bash
+./medicat_usb_builder.sh --quiet
+```
+Suppresses non-critical output.
+
+### Force Partitioning Scheme
+```bash
+./medicat_usb_builder.sh --force-mbr   # Old BIOS systems
+./medicat_usb_builder.sh --force-gpt   # Modern UEFI systems
 ```
 
-### Force GPT partitioning
+### Combine Flags
 ```bash
-./medicat_usb_builder.sh --force-gpt
+./medicat_usb_builder.sh --dry-run --verbose
+./medicat_usb_builder.sh --update-only --quiet
 ```
 
 ---
 
-# 🟪 Notes
+## 📊 Performance & Time Requirements
 
-- The installer supports both **BIOS** and **UEFI** boot modes.
-- The Fedora Patch Layer ensures Ventoy works correctly on Fedora 40–44.
-- The cache directory (`~/Medicat_USB_Cache`) can be safely deleted at any time.
+The MediCat archive is **~28 GB**, but smart caching reduces repeat installations:
+
+| Operation | Time | Details |
+|-----------|------|---------|
+| **First Download** | 5–40 min | Depends on connection speed |
+| **Extraction** | 3–20 min | SSD vs HDD |
+| **USB Copy** | 10–60 min | USB 3.0, 2.0, or SSD enclosure |
+| **Update Only** | 30 sec | Uses cached files + rsync --update |
+
+### Download Speed Optimization
+
+The script **automatically tests all mirrors** and selects the fastest one:
+
+```
+Testing mirror speeds...
+Mirror 1: 2.5 MB/s
+Mirror 2: 15.3 MB/s ← Selected (best)
+Mirror 3: 1.8 MB/s
+```
+
+---
+
+## 🔧 Advanced Flags
+
+| Flag | Purpose | Example |
+|------|---------|---------|
+| `--skip-ventoy` | Keep existing Ventoy | `./medicat_usb_builder.sh --skip-ventoy` |
+| `--skip-medicat` | Skip MediCat copy | `./medicat_usb_builder.sh --skip-medicat` |
+| `--update-only` | Copy only new files | `./medicat_usb_builder.sh --update-only` |
+| `--force-mbr` | Use MBR partitioning | `./medicat_usb_builder.sh --force-mbr` |
+| `--force-gpt` | Use GPT partitioning | `./medicat_usb_builder.sh --force-gpt` |
+| `--dry-run` | Preview without changes | `./medicat_usb_builder.sh --dry-run` |
+| `--verbose` | Show debug output | `./medicat_usb_builder.sh --verbose` |
+| `--quiet` | Suppress output | `./medicat_usb_builder.sh --quiet` |
+
+---
+
+## 🛠 How It Works
+
+### Build B4 Improvements
+
+**🔴 Critical Fixes:**
+- ✅ Log file initialized after cache directory creation
+- ✅ Error handling with proper return codes throughout
+- ✅ Temporary directory cleanup with RETURN trap
+- ✅ Safe glob expansion using `find` instead of `ls`
+- ✅ Mount status validation before unmounting
+- ✅ All critical commands verified for success
+
+**✅ Enhanced Error Handling:**
+- ✅ Download verification (curl, wget)
+- ✅ Archive extraction validation (tar, 7z)
+- ✅ File move confirmation
+- ✅ Better error messages with log file paths
+- ✅ USB device validation
+
+**✨ New Features:**
+- ✅ `--dry-run` mode for previews
+- ✅ `--verbose` mode for debugging
+- ✅ `--quiet` mode for silent operation
+- ✅ `log_debug()` function for detailed logging
+- ✅ `check_system_dependencies()` upfront validation
+- ✅ USB removable media verification
+- ✅ Mirror speed display (MB/s)
+
+**🛠 Code Quality:**
+- ✅ Modular function design
+- ✅ `mountpoint` command for safer checks
+- ✅ Graceful error handling
+- ✅ Better progress indicators (dot:giga)
+- ✅ Trap INT/TERM signals
+- ✅ Early returns on failure
+
+**📝 Logging & Debugging:**
+- ✅ Timestamps on all messages
+- ✅ Consistent color-coded output
+- ✅ Mirror speeds and URLs logged
+- ✅ Log file location in errors
+- ✅ Quiet mode respects all settings
 
 ---
 
 ## 📂 Directory Structure
 
-The repository itself remains clean and lightweight:
-
+### Repository Files
 ```
-medicat_usb_builder.sh
-patch/
-  Ventoy2Disk_fedora.sh
-  VentoyWorker_fedora.sh
-  README_fedora_patch.md
-README.md
-CHANGELOG.md
-LICENSE
+medicat-fedora-usb-installer/
+├── medicat_usb_builder.sh      # Main installer script (v4.1 B4)
+├── patch/                      # Fedora compatibility layer
+│   ├── Ventoy2Disk_fedora.sh   # Ventoy wrapper for Fedora
+│   ├── VentoyWorker_fedora.sh  # Ventoy worker wrapper
+│   └── README_fedora_patch.md  # Patch documentation
+├── README.md                   # This file
+├── CHANGELOG.md                # Version history
+└── LICENSE                     # MIT License
 ```
 
-The installer automatically creates and uses the following directories in your HOME folder:
-
+### Cache Directories (Auto-Created in HOME)
 ```
 ~/Medicat_USB_Cache/
-│
-├── Medicat.USB.vXX.XX.7z        # Downloaded MediCat archive (~28 GB)
-├── extracted/                   # Extracted MediCat files (~28 GB)
-└── ventoy/                      # Downloaded Ventoy release (20–30 MB)
+├── Medicat.USB.vXX.XX.7z       # Downloaded archive (~28 GB)
+├── extracted/                  # Extracted files (~28 GB)
+├── ventoy/                     # Ventoy release (20–30 MB)
+├── patch/                      # Fedora patches
+└── medicat_usb_builder.log     # Installation log
 ```
 
-These directories are used for:
-
-- caching MediCat USB to avoid re‑downloads  
-- storing extracted files for faster updates  
-- storing the Ventoy release used during installation  
-
-You may safely delete `~/Medicat_USB_Cache` at any time — the installer will recreate it automatically.
-
+**Safe to delete anytime** — everything will be re-downloaded/recreated automatically.
 
 ---
 
-## 🛠 Dependencies (Fedora)
+## 📦 Dependencies
 
-The script automatically installs:
+The script automatically installs missing packages via `dnf`:
 
-- wget  
-- curl  
-- unzip  
-- rsync  
-- exfatprogs  
-- ntfs‑3g  
-- p7zip  
-- p7zip‑plugins  
-- bc  
+- **Network:** `wget`, `curl`
+- **Archive:** `p7zip`, `p7zip-plugins`, `unzip`
+- **Filesystem:** `rsync`, `exfatprogs`, `ntfs-3g`
+- **Tools:** `bc`, `lsblk`, `mkntfs`
+
+---
+
+## ✅ System Requirements
+
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| **OS** | Fedora 40+ | Fedora 44 |
+| **Storage** | 60 GB free | 100 GB free |
+| **RAM** | 2 GB | 4 GB+ |
+| **USB** | 32 GB | 64 GB USB 3.0 |
+| **Internet** | 50 Mbps | 100+ Mbps fiber |
 
 ---
 
 ## 🧪 Tested On
 
-- Fedora 44 KDE  
-- BIOS boot  
-- UEFI boot  
-- USB 3.0 sticks  
-- SSD‑based USB enclosures  
+- ✅ Fedora 44 (KDE Plasma)
+- ✅ Fedora 43 (Workstation)
+- ✅ BIOS boot mode
+- ✅ UEFI boot mode
+- ✅ USB 3.0 sticks
+- ✅ SSD-based USB enclosures
+- ✅ Network mirroring (automatic selection)
 
 ---
 
-## 🟢 Status
+## 🐛 Troubleshooting
 
-**Stable**  
-Ready for daily use and incremental updates.
+### "Ventoy installation failed"
+```bash
+# Check the detailed log
+cat ~/Medicat_USB_Cache/medicat_usb_builder.log
+
+# Run in verbose mode for more info
+./medicat_usb_builder.sh --verbose
+```
+
+### "No valid server found"
+The CDN mirrors are temporarily down. Try again later or:
+```bash
+# Use dry-run to see which mirrors are being tested
+./medicat_usb_builder.sh --dry-run --verbose
+```
+
+### "Failed to mount ${TARGET}1"
+```bash
+# Check device is recognized
+lsblk
+
+# Manually unmount if stuck
+sudo umount /mnt/medicat 2>/dev/null
+
+# Try again
+./medicat_usb_builder.sh
+```
+
+### Log file not created
+The cache directory is created automatically on first run. If permissions are denied:
+```bash
+sudo chown $USER:$USER ~/Medicat_USB_Cache
+```
 
 ---
 
-## 📜 License
+## 📜 Logging
 
-MIT License.
+All operations are logged to:
+```
+~/Medicat_USB_Cache/medicat_usb_builder.log
+```
+
+Logs include:
+- Timestamps for all operations
+- Mirror speeds and selection
+- Download/extraction progress
+- Error messages with context
+- USB device information
+
+View logs in real-time:
+```bash
+tail -f ~/Medicat_USB_Cache/medicat_usb_builder.log
+```
+
+---
+
+## 🏆 Performance Tips
+
+1. **Use USB 3.0 or SSD enclosure** — Copy time 10–25 min vs 30–60 min
+2. **Update-only mode** — 30 seconds instead of 30 minutes for incremental updates
+3. **Fast internet** — Download time is major bottleneck (mirror auto-selection helps)
+4. **SSD for cache** — Extraction 2–3× faster than HDD
+5. **Pre-cache before travel** — Run once, use update-only mode later
+
+---
+
+## 🔐 Safety Features
+
+- ✅ **Removable media check** — Prevents accidental formatting of system drive
+- ✅ **Confirmation prompts** — Requires explicit "FORMAT" confirmation
+- ✅ **Auto-unmount cleanup** — Prevents corrupted USB states on exit
+- ✅ **Error validation** — All critical operations verified
+- ✅ **Dry-run mode** — Preview without making changes
+- ✅ **Log file tracking** — Full audit trail of all operations
+
+---
+
+## 🧑‍💻 Credits
+
+### Project Author
+- **lukumaki** — Identified Fedora 44 incompatibility, implemented Fedora Patch Layer, built first fully working MediCat USB Builder for Fedora
+
+### Fedora Patch Layer
+Restores Ventoy compatibility on Fedora 40–44 by:
+- Safe symlink: `mkexfatfs → mkfs.exfat`
+- Ventoy timing fixes for Fedora's udev
+- Official Ventoy scripts run unmodified
+
+### External Projects
+- **Ventoy Project** — https://www.ventoy.net / https://github.com/ventoy/Ventoy
+- **MediCat USB** — https://medicatusb.com
+- **mon5termatt** — https://github.com/mon5termatt/medicat_installer (mirror selection logic)
+
+---
+
+## 📝 Version History
+
+### Version 4.1 Build B4 (Latest)
+- ✨ Added `--dry-run`, `--verbose`, `--quiet` flags
+- ✨ Enhanced error handling with return codes
+- ✨ Better logging and debugging
+- ✨ USB removable media verification
+- ✨ Mirror speed testing and display
+- ✨ Improved code quality and modularity
+
+### Version 4.1 Build B3
+- Unified logging with color-coded output
+- Smart SSD caching for MediCat
+- Update-only mode with rsync
+- Progress bars for extraction and copy
+- BIOS/UEFI boot support
+
+### Version 4.0
+- Initial release with Fedora Patch Layer
+- Ventoy + format + copy automation
+- Cache system for faster updates
+
+---
+
+## 📄 License
+
+MIT License — Free to use, modify, and distribute.
+
+See [LICENSE](LICENSE) for details.
+
+---
+
+## 🤝 Contributing
+
+Found a bug? Have a suggestion?
+
+1. Check existing issues: https://github.com/lukumaki/medicat-fedora-usb-installer/issues
+2. Create a new issue with details
+3. Consider submitting a pull request
+
+---
+
+## ⚠️ Disclaimer
+
+This tool is provided as-is. Use at your own risk. Always:
+- Verify you've selected the correct USB device
+- Backup important data before formatting
+- Read confirmation prompts carefully
+- Check logs if something goes wrong
+
+---
+
+## 🔗 Quick Links
+
+- **GitHub Repository** — https://github.com/lukumaki/medicat-fedora-usb-installer
+- **Issue Tracker** — https://github.com/lukumaki/medicat-fedora-usb-installer/issues
+- **Latest Release** — https://github.com/lukumaki/medicat-fedora-usb-installer/releases
+- **Fedora Patch Documentation** — [patch/README_fedora_patch.md](patch/README_fedora_patch.md)
+
+---
+
+<p align="center">
+  <b>Made with ❤️ for Fedora Users</b><br>
+  <a href="https://github.com/lukumaki/medicat-fedora-usb-installer">⭐ Star this repo</a> if it helped you!
+</p>
