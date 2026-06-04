@@ -1,6 +1,6 @@
 #!/bin/bash
 # MediCat USB Builder for Fedora (Ventoy + Smart Cache)
-# Version: 4.2 (Professional Clean Build - B5)
+# Version: 4.3 (Professional Clean Build - B6)
 # Author: Frixos + Copilot
 
 set -euo pipefail
@@ -103,9 +103,15 @@ trap cleanup EXIT INT TERM
 # Initialize logging
 # ---------------------------------------------------------
 init_logging() {
-  mkdir -p "$MEDICAT_DIR"
-  LOG_FILE="$MEDICAT_DIR/medicat_usb_builder.log"
-  log_debug "Logging initialized: $LOG_FILE"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    mkdir -p /tmp/medicat_dry_run
+    LOG_FILE="/tmp/medicat_dry_run/medicat_usb_builder.log"
+    log_debug "[DRY RUN] Logging to: $LOG_FILE"
+  else
+    mkdir -p "$MEDICAT_DIR"
+    LOG_FILE="$MEDICAT_DIR/medicat_usb_builder.log"
+    log_debug "Logging initialized: $LOG_FILE"
+  fi
 }
 
 # ---------------------------------------------------------
@@ -114,7 +120,7 @@ init_logging() {
 show_banner() {
   echo ""
   echo "=============================================="
-  echo "  MediCat USB Builder for Fedora (v4.2)"
+  echo "  MediCat USB Builder for Fedora (v4.3)"
   echo "=============================================="
   echo ""
   [ "$DRY_RUN" -eq 1 ] && echo "⚠️  DRY RUN MODE - No changes will be made"
@@ -177,7 +183,9 @@ install_dependencies() {
 # Ventoy patches
 # ---------------------------------------------------------
 ensure_patches() {
-  mkdir -p "$PATCH_DIR"
+  if [ "$DRY_RUN" -eq 0 ]; then
+    mkdir -p "$PATCH_DIR"
+  fi
 
   download_patch() {
     local file="$1"
@@ -265,7 +273,9 @@ prepare_ventoy() {
 # MediCat download
 # ---------------------------------------------------------
 download_medicat() {
-  mkdir -p "$MEDICAT_DIR"
+  if [ "$DRY_RUN" -eq 0 ]; then
+    mkdir -p "$MEDICAT_DIR"
+  fi
   cd "$MEDICAT_DIR" || return 1
 
   if find . -maxdepth 1 -name '*.7z' -quit | grep -q .; then
@@ -359,6 +369,8 @@ extract_medicat_to_cache() {
 
   if [ "$DRY_RUN" -eq 1 ]; then
     log_info "[DRY RUN] Would extract: $FILE_NAME"
+    log_info "[DRY RUN] Would create: ./extracted/ directory"
+    log_info "[DRY RUN] Would create: .extracted.ok marker"
     cd - >/dev/null
     return 0
   fi
@@ -382,6 +394,13 @@ extract_medicat_to_cache() {
 # USB selection
 # ---------------------------------------------------------
 select_usb() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log_info "[DRY RUN] Skipping USB device selection"
+    TARGET="/dev/test_dry_run"
+    PART_DATA="${TARGET}1"
+    return 0
+  fi
+
   prompt "Please plug your USB now and press Enter..."
   read -r _
 
@@ -432,6 +451,11 @@ select_usb() {
 # Ventoy detection
 # ---------------------------------------------------------
 has_existing_ventoy() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log_debug "[DRY RUN] Skipping Ventoy detection check"
+    return 1
+  fi
+
   local part="${1}1"
   local tmp
   
@@ -478,7 +502,12 @@ install_ventoy_and_format() {
     elif [ "$FORCE_MBR" -eq 1 ]; then
       use_gpt=0
     else
-      YesNo "Use GPT instead of MBR?" && use_gpt=1
+      if [ "$DRY_RUN" -eq 0 ]; then
+        YesNo "Use GPT instead of MBR?" && use_gpt=1
+      else
+        log_info "[DRY RUN] Assuming MBR for testing purposes"
+        use_gpt=0
+      fi
     fi
 
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -511,32 +540,32 @@ install_ventoy_and_format() {
       sudo umount "${TARGET}1" 2>/dev/null || true
     fi
     
-    echo ""
-    echo "⚠ WARNING: You are about to FORMAT $PART_DATA"
-    echo "This will ERASE ALL DATA on the USB drive."
-    echo ""
-    echo "To continue, type: FORMAT"
-    echo "To cancel, press Enter."
-    echo ""
+    if [ "$DRY_RUN" -eq 1 ]; then
+      log_info "[DRY RUN] Would format: $PART_DATA as NTFS"
+    else
+      echo ""
+      echo "⚠ WARNING: You are about to FORMAT $PART_DATA"
+      echo "This will ERASE ALL DATA on the USB drive."
+      echo ""
+      echo "To continue, type: FORMAT"
+      echo "To cancel, press Enter."
+      echo ""
 
-    read -rp "> " confirm_format
-    case "$confirm_format" in
-        FORMAT) 
-            log_info "Proceeding with format..."
-            if [ "$DRY_RUN" -eq 1 ]; then
-              log_info "[DRY RUN] Would format: $PART_DATA as NTFS"
-            else
+      read -rp "> " confirm_format
+      case "$confirm_format" in
+          FORMAT) 
+              log_info "Proceeding with format..."
               if ! sudo mkntfs --fast --label Medicat "$PART_DATA"; then
                 log_error "Failed to format $PART_DATA"
                 return 1
               fi
-            fi
-            ;;
-        *)
-            log_info "Format cancelled by user."
-            exit 0
-            ;;
-    esac
+              ;;
+          *)
+              log_info "Format cancelled by user."
+              exit 0
+              ;;
+      esac
+    fi
   fi
 }
 
