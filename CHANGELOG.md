@@ -313,28 +313,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/lukumaki/medicat-fedora-usb-
 
 ---
 
-## Roadmap
-
-### Future Planned Features
-
-- [ ] Parallel mirror testing for faster selection
-- [ ] WebUI for device selection
-- [ ] Automated scheduled updates
-- [ ] Support for custom MediCat sources
-- [ ] Hash verification for downloads
-- [ ] Rollback capability for failed updates
-- [ ] Integration with systemd for background operation
-
-### Under Consideration
-
-- [ ] Support for other Linux distributions
-- [ ] Support for Windows (via WSL2)
-- [ ] Support for macOS
-- [ ] Automated testing pipeline
-- [ ] Community mirror contributions
-
----
-
 ## Support & Bug Reports
 
 Found an issue? Have a suggestion?
