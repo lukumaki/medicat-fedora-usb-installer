@@ -416,7 +416,11 @@ select_usb() {
   read -rp "> " ans
   case "$ans" in
       yes|YES|Yes|y|Y) ;;  # proceed
-      *) log_info "Aborted by user."; exit 0 ;;
+      *) 
+        log_info "Skipping installation to USB (operating in cache-only mode)."
+        SKIP_VENTOY=1
+        SKIP_MEDICAT=1
+        ;;
   esac
 }
 
@@ -579,15 +583,20 @@ prepare_ventoy || exit 1
 download_medicat || exit 1
 extract_medicat_to_cache || exit 1
 select_usb || exit 1
-install_ventoy_and_format || exit 1
-copy_medicat_to_usb || exit 1
 
-echo ""
-echo "=============================================="
-echo "  MediCat USB installation completed!"
-echo "=============================================="
-if [ "$DRY_RUN" -eq 1 ]; then
-  log_warn "Dry run completed (no changes made)"
+if [ "$SKIP_VENTOY" -eq 0 ] || [ "$SKIP_MEDICAT" -eq 0 ]; then
+  install_ventoy_and_format || exit 1
+  copy_medicat_to_usb || exit 1
+  
+  echo ""
+  echo "=============================================="
+  echo "  MediCat USB installation completed!"
+  echo "=============================================="
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log_warn "Dry run completed (no changes made)"
+  else
+    log_ok "MediCat USB installation completed successfully."
+  fi
 else
-  log_ok "MediCat USB installation completed successfully."
+  log_ok "Installation skipped. Cache prepared for future use."
 fi
