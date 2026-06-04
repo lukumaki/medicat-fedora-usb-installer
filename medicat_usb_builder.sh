@@ -1,6 +1,6 @@
 #!/bin/bash
 # MediCat USB Builder for Fedora (Ventoy + Smart Cache)
-# Version: 4.1 (Professional Clean Build - B4)
+# Version: 4.2 (Professional Clean Build - B5)
 # Author: Frixos + Copilot
 
 set -euo pipefail
@@ -29,18 +29,16 @@ UPDATE_ONLY=0
 FORCE_MBR=0
 FORCE_GPT=0
 DRY_RUN=0
-VERBOSE=0
 QUIET=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --skip-ventoy)   SKIP_VENTOY=1 ;;
-    --skip-medicat)  SKIP_MEDICAT=1 ;;
+    --skip-ventoy)   SKIP_VENTOY=1; SKIP_MEDICAT=0 ;;
+    --skip-medicat)  SKIP_MEDICAT=1; SKIP_VENTOY=0 ;;
     --update-only)   UPDATE_ONLY=1; SKIP_VENTOY=1; SKIP_MEDICAT=0 ;;
     --force-mbr)     FORCE_MBR=1 ;;
     --force-gpt)     FORCE_GPT=1 ;;
     --dry-run)       DRY_RUN=1 ;;
-    --verbose)       VERBOSE=1 ;;
     --quiet)         QUIET=1 ;;
   esac
   shift
@@ -76,7 +74,7 @@ log_info()  { [ "$QUIET" -eq 0 ] && cecho "$yellowB" "[INFO] $*";  log_raw "[INF
 log_ok()    { [ "$QUIET" -eq 0 ] && cecho "$greenB"  "[OK] $*";    log_raw "[OK] $*"; }
 log_warn()  { [ "$QUIET" -eq 0 ] && cecho "$redB"    "[WARN] $*";  log_raw "[WARN] $*"; }
 log_error() { cecho "$redB"    "[ERROR] $*"; log_raw "[ERROR] $*"; }
-log_debug() { [ "$VERBOSE" -eq 1 ] && cecho "$blueB" "[DEBUG] $*"; log_raw "[DEBUG] $*"; }
+log_debug() { [ "$QUIET" -eq 0 ] && cecho "$blueB" "[DEBUG] $*"; log_raw "[DEBUG] $*"; }
 
 out()    { [ "$QUIET" -eq 0 ] && cecho "$blueB" "$*"; }
 prompt() { [ "$QUIET" -eq 0 ] && cecho "$yellowB" "$1"; }
@@ -116,11 +114,17 @@ init_logging() {
 show_banner() {
   echo ""
   echo "=============================================="
-  echo "  MediCat USB Builder for Fedora (v4.1)"
+  echo "  MediCat USB Builder for Fedora (v4.2)"
   echo "=============================================="
   echo ""
   [ "$DRY_RUN" -eq 1 ] && echo "⚠️  DRY RUN MODE - No changes will be made"
-  [ "$VERBOSE" -eq 1 ] && echo "🔍 VERBOSE mode enabled"
+  if [ "$UPDATE_ONLY" -eq 1 ]; then
+    echo "🔄 UPDATE-ONLY mode - Will update existing MediCat"
+  elif [ "$SKIP_VENTOY" -eq 1 ]; then
+    echo "📦 SKIP-VENTOY mode - Will install only MediCat"
+  elif [ "$SKIP_MEDICAT" -eq 1 ]; then
+    echo "🚀 SKIP-MEDICAT mode - Will install only Ventoy"
+  fi
 }
 
 # ---------------------------------------------------------
@@ -498,8 +502,9 @@ install_ventoy_and_format() {
     fi
   fi
 
-  if [ "$SKIP_MEDICAT" -eq 1 ] && [ "$UPDATE_ONLY" -eq 1 ]; then
-    log_info "Skipping format due to update-only."
+  # Skip format if UPDATE_ONLY mode is active
+  if [ "$UPDATE_ONLY" -eq 1 ]; then
+    log_info "Update-only mode: Skipping format."
   else
     if [ "$DRY_RUN" -eq 0 ]; then
       sudo umount "$TARGET" 2>/dev/null || true
@@ -578,15 +583,34 @@ log_info "Starting MediCat USB Builder."
 [ "$DRY_RUN" -eq 1 ] && log_warn "Dry run mode - no changes will be made"
 
 check_system_dependencies || exit 1
-ensure_patches || exit 1
-prepare_ventoy || exit 1
-download_medicat || exit 1
-extract_medicat_to_cache || exit 1
+
+# Conditionally prepare Ventoy
+if [ "$SKIP_MEDICAT" -eq 1 ]; then
+  log_info "Skipping MediCat preparation (--skip-medicat mode)."
+  ensure_patches || exit 1
+  prepare_ventoy || exit 1
+else
+  ensure_patches || exit 1
+  prepare_ventoy || exit 1
+  download_medicat || exit 1
+  extract_medicat_to_cache || exit 1
+fi
+
+# Conditionally prepare MediCat
+if [ "$SKIP_VENTOY" -eq 1 ]; then
+  log_info "Skipping Ventoy preparation (--skip-ventoy mode)."
+else
+  log_debug "Ventoy preparation already handled."
+fi
+
 select_usb || exit 1
 
 if [ "$SKIP_VENTOY" -eq 0 ] || [ "$SKIP_MEDICAT" -eq 0 ]; then
   install_ventoy_and_format || exit 1
-  copy_medicat_to_usb || exit 1
+  
+  if [ "$SKIP_MEDICAT" -eq 0 ]; then
+    copy_medicat_to_usb || exit 1
+  fi
   
   echo ""
   echo "=============================================="
@@ -600,3 +624,4 @@ if [ "$SKIP_VENTOY" -eq 0 ] || [ "$SKIP_MEDICAT" -eq 0 ]; then
 else
   log_ok "Installation skipped. Cache prepared for future use."
 fi
+
