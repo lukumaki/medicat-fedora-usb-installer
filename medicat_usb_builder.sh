@@ -10,11 +10,16 @@ set -euo pipefail
 # ---------------------------------------------------------
 REPO_URL="https://github.com/lukumaki/medicat-fedora-usb-installer"
 PATCH_URL="$REPO_URL/raw/main/patch"
-VENTOY_DIR="./ventoy"
+
 PATCH_DIR="./patch"
+
+# Ventoy + MediCat cache stored in HOME
 MEDICAT_DIR="$HOME/Medicat_USB_Cache"
+VENTOY_DIR="$MEDICAT_DIR/ventoy"
+
 MNT_DIR="/mnt/medicat"
 LOG_FILE="$PWD/medicat_usb_builder.log"
+
 
 # ---------------------------------------------------------
 # CLI flags
@@ -147,7 +152,7 @@ download_ventoy() {
   log_info "Extracting Ventoy..."
   tar -xf ventoy.tar.gz
   rm -rf "$VENTOY_DIR"
-  mv ventoy-* "$VENTOY_DIR"
+  mkdir -p "$VENTOY_DIR" && mv ventoy-*/* "$VENTOY_DIR"/
   rm -f ventoy.tar.gz
 
   log_ok "Ventoy ready."
