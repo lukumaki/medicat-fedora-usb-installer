@@ -1,6 +1,6 @@
 #!/bin/bash
 # MediCat USB Builder for Fedora (Ventoy + Smart Cache)
-# Version: 4.3 (Professional Clean Build - B6)
+# Version: 4.4 (Professional Clean Build - B7)
 # Author: Frixos + Copilot
 
 set -euo pipefail
@@ -26,6 +26,7 @@ LOG_FILE=""  # Will be set after MEDICAT_DIR is created
 SKIP_VENTOY=0
 SKIP_MEDICAT=0
 UPDATE_ONLY=0
+FORCE_UPDATE=0
 FORCE_MBR=0
 FORCE_GPT=0
 DRY_RUN=0
@@ -33,13 +34,14 @@ QUIET=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --skip-ventoy)   SKIP_VENTOY=1; SKIP_MEDICAT=0 ;;
-    --skip-medicat)  SKIP_MEDICAT=1; SKIP_VENTOY=0 ;;
-    --update-only)   UPDATE_ONLY=1; SKIP_VENTOY=1; SKIP_MEDICAT=0 ;;
-    --force-mbr)     FORCE_MBR=1 ;;
-    --force-gpt)     FORCE_GPT=1 ;;
-    --dry-run)       DRY_RUN=1 ;;
-    --quiet)         QUIET=1 ;;
+    --skip-ventoy)    SKIP_VENTOY=1; SKIP_MEDICAT=0 ;;
+    --skip-medicat)   SKIP_MEDICAT=1; SKIP_VENTOY=0 ;;
+    --update-only)    UPDATE_ONLY=1; SKIP_VENTOY=1; SKIP_MEDICAT=0 ;;
+    --force-update)   FORCE_UPDATE=1; SKIP_VENTOY=0; SKIP_MEDICAT=0 ;;
+    --force-mbr)      FORCE_MBR=1 ;;
+    --force-gpt)      FORCE_GPT=1 ;;
+    --dry-run)        DRY_RUN=1 ;;
+    --quiet)          QUIET=1 ;;
   esac
   shift
 done
@@ -120,11 +122,13 @@ init_logging() {
 show_banner() {
   echo ""
   echo "=============================================="
-  echo "  MediCat USB Builder for Fedora (v4.3)"
+  echo "  MediCat USB Builder for Fedora (v4.4)"
   echo "=============================================="
   echo ""
   [ "$DRY_RUN" -eq 1 ] && echo "⚠️  DRY RUN MODE - No changes will be made"
-  if [ "$UPDATE_ONLY" -eq 1 ]; then
+  if [ "$FORCE_UPDATE" -eq 1 ]; then
+    echo "⚡ FORCE-UPDATE mode - Using cached extracted files"
+  elif [ "$UPDATE_ONLY" -eq 1 ]; then
     echo "🔄 UPDATE-ONLY mode - Will update existing MediCat"
   elif [ "$SKIP_VENTOY" -eq 1 ]; then
     echo "📦 SKIP-VENTOY mode - Will install only MediCat"
@@ -273,6 +277,12 @@ prepare_ventoy() {
 # MediCat download
 # ---------------------------------------------------------
 download_medicat() {
+  # Skip download if --force-update is enabled
+  if [ "$FORCE_UPDATE" -eq 1 ]; then
+    log_info "Force-update mode: Skipping MediCat archive download."
+    return 0
+  fi
+
   if [ "$DRY_RUN" -eq 0 ]; then
     mkdir -p "$MEDICAT_DIR"
   fi
@@ -351,6 +361,18 @@ download_medicat() {
 # Extraction
 # ---------------------------------------------------------
 extract_medicat_to_cache() {
+  # Skip extraction if --force-update is enabled and extracted dir exists
+  if [ "$FORCE_UPDATE" -eq 1 ]; then
+    if [ -d "$MEDICAT_DIR/extracted" ]; then
+      log_ok "Force-update mode: Using existing extracted/ directory."
+      return 0
+    else
+      log_error "Force-update mode: extracted/ directory not found at $MEDICAT_DIR/extracted"
+      log_error "Please run without --force-update first to download and extract MediCat."
+      return 1
+    fi
+  fi
+
   cd "$MEDICAT_DIR" || return 1
 
   FILE_NAME=$(find . -maxdepth 1 -name '*.7z' -print -quit)
@@ -531,9 +553,9 @@ install_ventoy_and_format() {
     fi
   fi
 
-  # Skip format if UPDATE_ONLY mode is active
-  if [ "$UPDATE_ONLY" -eq 1 ]; then
-    log_info "Update-only mode: Skipping format."
+  # Skip format if UPDATE_ONLY or FORCE_UPDATE mode is active
+  if [ "$UPDATE_ONLY" -eq 1 ] || [ "$FORCE_UPDATE" -eq 1 ]; then
+    log_info "Update-only/Force-update mode: Skipping format."
   else
     if [ "$DRY_RUN" -eq 0 ]; then
       sudo umount "$TARGET" 2>/dev/null || true
@@ -589,7 +611,9 @@ copy_medicat_to_usb() {
   out "Copying MediCat to USB..."
 
   local rsync_opts="-avh --info=progress2"
-  [ "$UPDATE_ONLY" -eq 1 ] && rsync_opts="$rsync_opts --update"
+  if [ "$UPDATE_ONLY" -eq 1 ] || [ "$FORCE_UPDATE" -eq 1 ]; then
+    rsync_opts="$rsync_opts --update"
+  fi
 
   log_debug "Running rsync with options: $rsync_opts"
   
