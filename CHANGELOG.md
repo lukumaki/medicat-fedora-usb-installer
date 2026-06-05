@@ -1,7 +1,65 @@
-# Changelog
-
+# Changelog  
 All notable changes to this project will be documented in this file.  
-This project adheres to [Semantic Versioning](https://semver.org/) where possible.
+This project adheres to semantic versioning where possible.
+
+---
+
+## [6.1] — 2026-06-05  
+### Full Architecture Refactor + Complete Integration of Ventoy & MediCat Pipelines
+
+#### Added
+- Full Ventoy download pipeline:
+  - Auto-detection of latest version from SourceForge.
+  - High-speed download with `wget --progress=dot:giga`.
+  - Automatic extraction and relocation into `$VENTOY_DIR`.
+  - DRY RUN support for all download/extract steps.
+- Full MediCat download pipeline:
+  - Automatic retrieval of `cdn.bat`.
+  - Mirror speed benchmarking using `curl --speed_download`.
+  - Fastest-mirror selection logic.
+  - Safe download of `.7z` archive with progress indicators.
+- Full MediCat extraction pipeline:
+  - 7z extraction with progress (`-bsp1`).
+  - `.extracted.ok` marker for idempotent runs.
+  - DRY RUN support for extraction.
+- Fedora Ventoy patch manager:
+  - Automatic download of `Ventoy2Disk_fedora.sh` and `VentoyWorker_fedora.sh`.
+  - Executable permission handling.
+  - DRY RUN support.
+
+#### Changed
+- **Complete rewrite of installer logic using MODE architecture:**
+  - `install`, `update`, `ventoy`, `skip` modes.
+  - Clean separation of decisions vs actions.
+  - No nested logic inside action blocks.
+- USB selection now *only* selects device; no longer interferes with mode logic.
+- Ventoy installation block rewritten to be action-only and deterministic.
+- Format block rewritten with safe confirmation and zero decision logic.
+- MediCat install/update block rewritten with clean rsync logic.
+- DRY RUN now respected across all operations (Ventoy, format, MediCat, downloads).
+- Unified logging across all modules.
+
+#### Fixed
+- Update-only mode no longer triggers Ventoy or format operations.
+- Skip-MediCat mode no longer interferes with Ventoy logic.
+- Fedora Ventoy patches now reliably downloaded and validated.
+- MediCat extraction no longer re-extracts unnecessarily.
+- USB selection no longer overrides user flags or breaks update mode.
+- Multiple edge cases where Ventoy output parsing failed.
+
+---
+
+## [6.0] — 2026-06-04  
+### Initial MODE Architecture + Core Refactor
+
+#### Added
+- MODE-based decision system.
+- Clean Ventoy/format/MediCat action blocks.
+- DRY RUN support for core operations.
+
+#### Changed
+- Removed legacy nested logic.
+- Improved logging and error handling.
 
 ---
 
