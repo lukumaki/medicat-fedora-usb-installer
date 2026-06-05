@@ -56,6 +56,10 @@ main() {
     log_info "User declined USB operation. Exiting."
     exit 0
   fi
+  # Enable auto-detection ONLY for update-only mode
+  if [[ "$MODE" = "update" ]]; then
+    detect_partitions_simple
+  fi
   mode_to_flags
 
   install_ventoy
