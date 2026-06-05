@@ -17,7 +17,7 @@
 
 ### Fully automated, production-ready tool for creating Ventoy-based MediCat USB drives on Fedora Linux.
 
-**Version 4.1 Build B4** — Professional Clean Build with Enhanced Error Handling & New Features
+**Version 5**
 
 ---
 
@@ -79,43 +79,20 @@ chmod +x medicat_usb_builder.sh
 
 ---
 
-## 🎯 Usage Examples
+## 🔧 All Available Flags
 
-### Full Installation (Fresh USB)
-```bash
-./medicat_usb_builder.sh
-```
-Downloads Ventoy, formats USB, copies MediCat.
+| Flag | Purpose | Example |
+|------|---------|---------|
+| `--skip-ventoy` | Keep existing Ventoy | `./medicat_usb_builder.sh --skip-ventoy` |
+| `--skip-medicat` | Skip MediCat copy | `./medicat_usb_builder.sh --skip-medicat` |
+| `--update-only` | Copy only new Medicat files | `./medicat_usb_builder.sh --update-only` |
+| `--force-mbr` | Use MBR partitioning | `./medicat_usb_builder.sh --force-mbr` |
+| `--force-gpt` | Use GPT partitioning | `./medicat_usb_builder.sh --force-gpt` |
+| `--dry-run` | Preview without changes | `./medicat_usb_builder.sh --dry-run` |
+| `--force-update` | Copy Medicat files from existing local cache | `./medicat_usb_builder.sh --force-update` |
+| `--quiet` | Suppress output | `./medicat_usb_builder.sh --quiet` |
 
-### Update Existing USB (30 seconds)
-```bash
-./medicat_usb_builder.sh --update-only
-```
-Copies only new/modified files using rsync.
-
-### Skip Ventoy (Keep Existing)
-```bash
-./medicat_usb_builder.sh --skip-ventoy
-```
-Useful if Ventoy is already installed.
-
-### Preview Without Changes (Dry Run)
-```bash
-./medicat_usb_builder.sh --dry-run
-```
-Shows what would happen without making changes.
-
-### Debug Mode (Verbose Output)
-```bash
-./medicat_usb_builder.sh --verbose
-```
-Detailed output showing mirrors, speeds, and status.
-
-### Quiet Mode
-```bash
-./medicat_usb_builder.sh --quiet
-```
-Suppresses non-critical output.
+---
 
 ### Force Partitioning Scheme
 ```bash
@@ -152,21 +129,6 @@ Mirror 1: 2.5 MB/s
 Mirror 2: 15.3 MB/s ← Selected (best)
 Mirror 3: 1.8 MB/s
 ```
-
----
-
-## 🔧 All Available Flags
-
-| Flag | Purpose | Example |
-|------|---------|---------|
-| `--skip-ventoy` | Keep existing Ventoy | `./medicat_usb_builder.sh --skip-ventoy` |
-| `--skip-medicat` | Skip MediCat copy | `./medicat_usb_builder.sh --skip-medicat` |
-| `--update-only` | Copy only new files | `./medicat_usb_builder.sh --update-only` |
-| `--force-mbr` | Use MBR partitioning | `./medicat_usb_builder.sh --force-mbr` |
-| `--force-gpt` | Use GPT partitioning | `./medicat_usb_builder.sh --force-gpt` |
-| `--dry-run` | Preview without changes | `./medicat_usb_builder.sh --dry-run` |
-| `--verbose` | Show debug output | `./medicat_usb_builder.sh --verbose` |
-| `--quiet` | Suppress output | `./medicat_usb_builder.sh --quiet` |
 
 ---
 
