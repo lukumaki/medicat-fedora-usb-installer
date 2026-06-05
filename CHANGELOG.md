@@ -4,6 +4,42 @@ This project adheres to semantic versioning where possible.
 
 ---
 
+## Migration Notes — v6.x → v7.0
+
+Version **7.0** introduces a complete architectural redesign.  
+This release is **not backward‑compatible** with v6.x and earlier.
+
+### What Changed
+- The monolithic Bash script has been replaced with a **modular codebase**.
+- All configuration has moved to **config.json**.
+- Ventoy, MediCat, USB, formatting, and logging are now **separate modules**.
+- The MODE engine has been rewritten for clarity and maintainability.
+- Ventoy and MediCat workflows are now fully isolated and testable.
+- DRY RUN support is consistent across all modules.
+- USB selection no longer influences MODE logic.
+- Ventoy partition handling now correctly targets partition 2 for data.
+
+### Required Actions for Users
+- Replace your old script with the new folder structure.
+- Ensure `jq` is installed (required for JSON parsing).
+- Update any custom paths or URLs inside `config.json`.
+- Re‑run MediCat extraction once (v7.0 uses a new cache layout).
+
+### Required Actions for Developers
+- Update any custom patches or modules to the new directory layout.
+- Use the unified logging API (`log_info`, `log_error`, etc.).
+- Use `config.json` instead of hardcoding paths or URLs.
+
+### Summary
+v7.0 is a **breaking change**, but it provides:
+- cleaner architecture  
+- easier maintenance  
+- safer USB handling  
+- predictable behavior  
+- professional open‑source structure  
+
+---
+
 ## [6.1] — 2026-06-05  
 ### Full Architecture Refactor + Complete Integration of Ventoy & MediCat Pipelines
 
