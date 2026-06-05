@@ -1,8 +1,8 @@
 {
   "project": {
     "name": "MediCat USB Builder for Fedora",
-    "version": "7.0",
-    "author": "Frixos + Copilot"
+    "version": "7.1",
+    "author": "Lukumaki + Copilot"
   },
   "paths": {
     "cache_dir": "$HOME/Medicat_USB_Cache",
