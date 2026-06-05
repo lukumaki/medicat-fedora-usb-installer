@@ -527,7 +527,7 @@ install_ventoy_and_format() {
   else
     # Default mode = MBR
     use_gpt=0
-    log_info "Using default GPT partitioning."
+    log_info "Using default MBR partitioning."
   fi
 
   # -----------------------------
