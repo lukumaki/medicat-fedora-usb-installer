@@ -1,0 +1,26 @@
+{
+  "project": {
+    "name": "MediCat USB Builder for Fedora",
+    "version": "7.0",
+    "author": "Frixos + Copilot"
+  },
+  "paths": {
+    "cache_dir": "$HOME/Medicat_USB_Cache",
+    "log_file": "$HOME/Medicat_USB_Cache/medicat_usb_builder.log",
+    "medicat_dir": "$HOME/Medicat_USB_Cache/medicat",
+    "mnt_dir": "/mnt/medicat",
+    "patch_dir": "$HOME/Medicat_USB_Cache/ventoy_patches",
+    "ventoy_dir": "$HOME/Medicat_USB_Cache/ventoy"
+  },
+  "urls": {
+    "repo_url": "https://github.com/lukumaki/medicat-fedora-usb-installer",
+    "patch_url": "https://github.com/lukumaki/medicat-fedora-usb-installer/raw/main/patches",
+    "ventoy_sourceforge": "https://sourceforge.net/projects/ventoy/files/",
+    "medicat_cdn_bat": "https://cdn.medicatusb.com/cdn.bat"
+  },
+  "modes": ["install", "update", "ventoy", "skip"],
+  "defaults": {
+    "force_gpt": true,
+    "force_mbr": false
+  }
+}
