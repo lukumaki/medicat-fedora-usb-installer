@@ -517,19 +517,13 @@ install_ventoy_and_format() {
     fi
   fi
 
-  if [ "$SKIP_VENTOY" -eq 0 ]; then
-    local use_gpt=0
-
+  if [ "$SKIP_VENTOY" -eq 0 ] || [ "$FORCE_MBR" -eq 1 ];; then
+    log_info "Install Ventoy to selected USB with MBR partitioning" 
+    use_gpt=0
+  else
     if [ "$FORCE_GPT" -eq 1 ]; then
+      log_info "Forcing GPT format"
       use_gpt=1
-    elif [ "$FORCE_MBR" -eq 1 ]; then
-      use_gpt=0
-    else
-      if [ "$DRY_RUN" -eq 0 ]; then
-        YesNo "Use GPT instead of MBR?" && use_gpt=1
-      else
-        log_info "[DRY RUN] Assuming MBR for testing purposes"
-        use_gpt=0
       fi
     fi
 
@@ -543,9 +537,9 @@ install_ventoy_and_format() {
         ventoy_output=$(sudo "$PATCH_DIR/Ventoy2Disk_fedora.sh" -I "$TARGET" 2>&1)
       fi
 
-      log_raw "$ventoy_output" >> "$LOG_FILE"
+      echo "$ventoy_output" >> "$LOG_FILE"
 
-      if ! log_raw "$ventoy_output" | grep -qi "successfully finished"; then
+      if ! echo "$ventoy_output" | grep -qi "successfully finished"; then
         log_error "Ventoy installation failed. Check log: $LOG_FILE"
         return 1
       fi
