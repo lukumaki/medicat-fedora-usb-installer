@@ -505,28 +505,35 @@ has_existing_ventoy() {
 install_ventoy_and_format() {
   export VTOY_NO_PROMPT=1
 
+  # -----------------------------
+  # Ventoy installation decision
+  # -----------------------------
   if [ "$SKIP_VENTOY" -eq 1 ]; then
     log_info "Skipping Ventoy installation."
+    install_ventoy=0
   else
-    if has_existing_ventoy "$TARGET"; then
-      if YesNo "Existing Ventoy detected. Keep it?"; then
-        log_ok "Keeping existing Ventoy."
-      else
-        log_info "Reinstalling Ventoy."
-      fi
-    fi
+    install_ventoy=1
   fi
 
-  if [ "$SKIP_VENTOY" -eq 0 ] || [ "$FORCE_MBR" -eq 1 ]; then
-    log_info "Install Ventoy to selected USB with MBR partitioning" 
+  # -----------------------------
+  # Partitioning mode selection
+  # -----------------------------
+  if [ "$FORCE_GPT" -eq 1 ]; then
+    use_gpt=1
+    log_info "Forcing GPT partitioning."
+  elif [ "$FORCE_MBR" -eq 1 ]; then
     use_gpt=0
+    log_info "Forcing MBR partitioning."
   else
-    if [ "$FORCE_GPT" -eq 1 ]; then
-      log_info "Forcing GPT format"
-      use_gpt=1
-      fi
-    fi
+    # Default mode = MBR
+    use_gpt=0
+    log_info "Using default GPT partitioning."
+  fi
 
+  # -----------------------------
+  # Install Ventoy (if enabled)
+  # -----------------------------
+  if [ "$install_ventoy" -eq 1 ]; then
     if [ "$DRY_RUN" -eq 1 ]; then
       log_info "[DRY RUN] Would install Ventoy with $([ "$use_gpt" -eq 1 ] && echo "GPT" || echo "MBR")"
     else
@@ -548,41 +555,47 @@ install_ventoy_and_format() {
     fi
   fi
 
-  # Skip format if UPDATE_ONLY or FORCE_UPDATE mode is active
+  # -----------------------------
+  # Skip format in update modes
+  # -----------------------------
   if [ "$UPDATE_ONLY" -eq 1 ] || [ "$FORCE_UPDATE" -eq 1 ]; then
     log_info "Update-only/Force-update mode: Skipping format."
-  else
-    if [ "$DRY_RUN" -eq 0 ]; then
-      sudo umount "$TARGET" 2>/dev/null || true
-      sudo umount "${TARGET}1" 2>/dev/null || true
-    fi
-    
-    if [ "$DRY_RUN" -eq 1 ]; then
-      log_info "[DRY RUN] Would format: $PART_DATA as NTFS"
-    else
-      log_raw ""
-      log_raw "⚠ WARNING: You are about to FORMAT $PART_DATA"
-      log_raw "This will ERASE ALL DATA on the USB drive."
-      log_raw ""
-      log_raw "To continue, type: FORMAT"
-      log_raw "To cancel, press Enter."
-      log_raw ""
+    return 0
+  fi
 
-      read -rp "> " confirm_format
-      case "$confirm_format" in
-          FORMAT) 
-              log_info "Proceeding with format..."
-              if ! sudo mkntfs --fast --label Medicat "$PART_DATA"; then
-                log_error "Failed to format $PART_DATA"
-                return 1
-              fi
-              ;;
-          *)
-              log_info "Format cancelled by user."
-              exit 0
-              ;;
-      esac
-    fi
+  # -----------------------------
+  # Format partition
+  # -----------------------------
+  if [ "$DRY_RUN" -eq 0 ]; then
+    sudo umount "$TARGET" 2>/dev/null || true
+    sudo umount "${TARGET}1" 2>/dev/null || true
+  fi
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log_info "[DRY RUN] Would format $PART_DATA as NTFS"
+  else
+    log_raw ""
+    log_raw "⚠ WARNING: You are about to FORMAT $PART_DATA"
+    log_raw "This will ERASE ALL DATA on the USB drive."
+    log_raw ""
+    log_raw "To continue, type: FORMAT"
+    log_raw "To cancel, press Enter."
+    log_raw ""
+
+    read -rp "> " confirm_format
+    case "$confirm_format" in
+        FORMAT)
+            log_info "Proceeding with format..."
+            if ! sudo mkntfs --fast --label Medicat "$PART_DATA"; then
+              log_error "Failed to format $PART_DATA"
+              return 1
+            fi
+            ;;
+        *)
+            log_info "Format cancelled by user."
+            exit 0
+            ;;
+    esac
   fi
 }
 
