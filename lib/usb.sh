@@ -44,3 +44,47 @@ select_usb_device() {
     USER_DECLINED_USB=1
   fi
 }
+detect_partitions_simple() {
+    log_info "Auto-detecting partitions for update-only mode..."
+
+    local dev="$TARGET"
+
+    # Read partitions: NAME FSTYPE SIZE
+    mapfile -t parts < <(lsblk -nr -o NAME,FSTYPE,SIZE "$dev")
+
+    EFI_PART=""
+    MEDICAT_PART=""
+
+    for line in "${parts[@]}"; do
+        set -- $line
+        local name="$1"
+        local fstype="$2"
+        local size="$3"
+        local full="/dev/$name"
+
+        # Detect EFI (FAT32, small size)
+        if [[ "$fstype" == "vfat" ]]; then
+            EFI_PART="$full"
+            continue
+        fi
+
+        # Detect Medicat data (NTFS, large size)
+        if [[ "$fstype" == "ntfs" ]]; then
+            MEDICAT_PART="$full"
+            continue
+        fi
+    done
+
+    log_info "Partition auto-detection results:"
+    log_raw "  EFI partition:      ${EFI_PART:-NOT FOUND}"
+    log_raw "  Medicat partition:  ${MEDICAT_PART:-NOT FOUND}"
+
+    if [[ -z "$MEDICAT_PART" ]]; then
+        log_error "Could not detect NTFS Medicat partition. Update-only cannot continue."
+        exit 1
+    fi
+
+    # Export result for install_medicat()
+    PART_DATA="$MEDICAT_PART"
+}
+
