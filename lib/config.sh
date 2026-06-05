@@ -1,6 +1,8 @@
 #!/bin/bash
 
-CONFIG_FILE="$(dirname "$0")/../config.json"
+# Determine absolute path of project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/config.json"
 
 load_config() {
   if ! command -v jq >/dev/null; then
@@ -8,18 +10,10 @@ load_config() {
     exit 1
   fi
 
-  local cache_dir_raw
-  cache_dir_raw=$(jq -r '.paths.cache_dir' "$CONFIG_FILE")
-  CACHE_DIR=$(eval echo "$cache_dir_raw")
-
-  local log_file_raw
-  log_file_raw=$(jq -r '.paths.log_file' "$CONFIG_FILE")
-  LOG_FILE=$(eval echo "$log_file_raw")
-
-  local medicat_dir_raw
-  medicat_dir_raw=$(jq -r '.paths.medicat_dir' "$CONFIG_FILE")
-  MEDICAT_DIR=$(eval echo "$medicat_dir_raw")
-
+  # Load paths from JSON and expand $HOME
+  CACHE_DIR=$(eval echo "$(jq -r '.paths.cache_dir' "$CONFIG_FILE")")
+  LOG_FILE=$(eval echo "$(jq -r '.paths.log_file' "$CONFIG_FILE")")
+  MEDICAT_DIR=$(eval echo "$(jq -r '.paths.medicat_dir' "$CONFIG_FILE")")
   MNT_DIR=$(jq -r '.paths.mnt_dir' "$CONFIG_FILE")
   PATCH_DIR=$(eval echo "$(jq -r '.paths.patch_dir' "$CONFIG_FILE")")
   VENTOY_DIR=$(eval echo "$(jq -r '.paths.ventoy_dir' "$CONFIG_FILE")")
