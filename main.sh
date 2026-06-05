@@ -44,13 +44,8 @@ main() {
     log_ok "Core dependencies found."
   }
   check_dependencies
-
-  ensure_patches
-  prepare_ventoy
-  download_medicat
-  extract_medicat_to_cache
-
   select_usb_device
+
   decide_mode
   if [ "$MODE" = "skip" ]; then
     log_info "User declined USB operation. Exiting."
@@ -62,6 +57,10 @@ main() {
   fi
   mode_to_flags
 
+  ensure_patches
+  prepare_ventoy
+  download_medicat
+  extract_medicat_to_cache
   install_ventoy
   format_usb
   install_medicat
