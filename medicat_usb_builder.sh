@@ -120,20 +120,20 @@ init_logging() {
 # Banner
 # ---------------------------------------------------------
 show_banner() {
-  echo ""
-  echo "=============================================="
-  echo "  MediCat USB Builder for Fedora v5.0"
-  echo "=============================================="
-  echo ""
+  log_raw ""
+  log_raw "=============================================="
+  log_raw "  MediCat USB Builder for Fedora v5.0"
+  log_raw "=============================================="
+  log_raw ""
   [ "$DRY_RUN" -eq 1 ] && echo "⚠️  DRY RUN MODE - No changes will be made"
   if [ "$FORCE_UPDATE" -eq 1 ]; then
-    echo "⚡ FORCE-UPDATE mode - Using cached extracted files"
+    log_raw "⚡ FORCE-UPDATE mode - Using cached extracted files"
   elif [ "$UPDATE_ONLY" -eq 1 ]; then
-    echo "🔄 UPDATE-ONLY mode - Will update existing MediCat"
+    log_raw "🔄 UPDATE-ONLY mode - Will update existing MediCat"
   elif [ "$SKIP_VENTOY" -eq 1 ]; then
-    echo "📦 SKIP-VENTOY mode - Will install only MediCat"
+    log_raw "📦 SKIP-VENTOY mode - Will install only MediCat"
   elif [ "$SKIP_MEDICAT" -eq 1 ]; then
-    echo "🚀 SKIP-MEDICAT mode - Will install only Ventoy"
+    log_raw "🚀 SKIP-MEDICAT mode - Will install only Ventoy"
   fi
 }
 
@@ -218,7 +218,6 @@ ensure_patches() {
 # Ventoy download
 # ---------------------------------------------------------
 download_ventoy() {
-  log_info "Detecting latest Ventoy version..."
   local LATEST
   LATEST=$(curl -s "https://sourceforge.net/projects/ventoy/files/" 2>/dev/null \
     | grep -oP 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 || true)
@@ -271,6 +270,8 @@ prepare_ventoy() {
   else
     log_ok "Ventoy folder already exists (cached)."
   fi
+  
+  log_info "Detecting latest Ventoy version..."
 }
 
 # ---------------------------------------------------------
@@ -452,11 +453,11 @@ select_usb() {
     log_warn "$letter may not be removable media (use with caution)"
   fi
 
-  echo ""
-  echo "Install MediCat to $TARGET ? (y/N)"
-  echo "(type 'yes' only for fresh/full installation,"
-  echo " for all other flags type No or press Enter)"
-  echo ""
+  log_raw ""
+  log_raw "Install MediCat to $TARGET ? (y/N)"
+  log_raw "(type 'yes' only for fresh/full installation,"
+  log_raw " for all other flags type No or press Enter)"
+  log_raw ""
 
   read -rp "> " ans
   case "$ans" in
@@ -542,9 +543,9 @@ install_ventoy_and_format() {
         ventoy_output=$(sudo "$PATCH_DIR/Ventoy2Disk_fedora.sh" -I "$TARGET" 2>&1)
       fi
 
-      echo "$ventoy_output" >> "$LOG_FILE"
+      log_raw "$ventoy_output" >> "$LOG_FILE"
 
-      if ! echo "$ventoy_output" | grep -qi "successfully finished"; then
+      if ! log_raw "$ventoy_output" | grep -qi "successfully finished"; then
         log_error "Ventoy installation failed. Check log: $LOG_FILE"
         return 1
       fi
@@ -565,13 +566,13 @@ install_ventoy_and_format() {
     if [ "$DRY_RUN" -eq 1 ]; then
       log_info "[DRY RUN] Would format: $PART_DATA as NTFS"
     else
-      echo ""
-      echo "⚠ WARNING: You are about to FORMAT $PART_DATA"
-      echo "This will ERASE ALL DATA on the USB drive."
-      echo ""
-      echo "To continue, type: FORMAT"
-      echo "To cancel, press Enter."
-      echo ""
+      log_raw ""
+      log_raw "⚠ WARNING: You are about to FORMAT $PART_DATA"
+      log_raw "This will ERASE ALL DATA on the USB drive."
+      log_raw ""
+      log_raw "To continue, type: FORMAT"
+      log_raw "To cancel, press Enter."
+      log_raw ""
 
       read -rp "> " confirm_format
       case "$confirm_format" in
@@ -665,10 +666,10 @@ if [ "$SKIP_VENTOY" -eq 0 ] || [ "$SKIP_MEDICAT" -eq 0 ]; then
     copy_medicat_to_usb || exit 1
   fi
   
-  echo ""
-  echo "=============================================="
-  echo "  MediCat USB installation completed!"
-  echo "=============================================="
+  log_raw ""
+  log_raw "=============================================="
+  log_raw "  MediCat USB installation completed!"
+  log_raw "=============================================="
   if [ "$DRY_RUN" -eq 1 ]; then
     log_warn "Dry run completed (no changes made)"
   else
