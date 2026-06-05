@@ -1,14 +1,19 @@
 #!/bin/bash
 
 download_medicat() {
+
+  # Skip download entirely in update mode
+  if [ "$MODE" = "update" ]; then
+    log_info "MODE=update → Skipping MediCat download step."
+    return 0
+  fi
+
   if [ "$FORCE_UPDATE" -eq 1 ]; then
     log_info "Force-update mode: Skipping MediCat archive download."
     return 0
   fi
 
-  if [ "$DRY_RUN" -eq 0 ]; then
-    mkdir -p "$MEDICAT_DIR"
-  fi
+  mkdir -p "$MEDICAT_DIR"
   cd "$MEDICAT_DIR" || return 1
 
   if find . -maxdepth 1 -name '*.7z' -quit | grep -q .; then
