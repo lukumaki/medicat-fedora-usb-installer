@@ -517,7 +517,7 @@ install_ventoy_and_format() {
     fi
   fi
 
-  if [ "$SKIP_VENTOY" -eq 0 ] || [ "$FORCE_MBR" -eq 1 ];; then
+  if [ "$SKIP_VENTOY" -eq 0 ] || [ "$FORCE_MBR" -eq 1 ]; then
     log_info "Install Ventoy to selected USB with MBR partitioning" 
     use_gpt=0
   else
