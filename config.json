@@ -7,8 +7,10 @@
   "paths": {
     "cache_dir": "$HOME/Medicat_USB_Cache",
     "log_file": "$HOME/Medicat_USB_Cache/medicat_usb_builder.log",
-    "medicat_dir": "$HOME/Medicat_USB_Cache/medicat",
+
+    "medicat_dir": "$HOME/Medicat_USB_Cache",
     "mnt_dir": "/mnt/medicat",
+
     "patch_dir": "$HOME/Medicat_USB_Cache/ventoy_patches",
     "ventoy_dir": "$HOME/Medicat_USB_Cache/ventoy"
   },
