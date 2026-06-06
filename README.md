@@ -153,70 +153,27 @@ chmod -R +x lib/
 ./main.sh --dry-run
 ```
 
----
+----
 
-# Configuration (config.json)
+## 📦 Notes for Users
 
-All paths, URLs, and defaults are stored in `config.json`.  
-Example:
-
-```json
-{
-  "paths": {
-    "cache_dir": "$HOME/Medicat_USB_Cache",
-    "ventoy_dir": "$HOME/Medicat_USB_Cache/ventoy"
-  }
-}
-```
-
-You can safely modify paths, URLs, or defaults without touching the Bash code.
+- This version is **recommended for all Fedora users**  
+- Existing MediCat USB drives can be updated using:  
+  ```
+  ./medicat_usb_builder.sh --update-only
+  ```
+- First‑time installation still requires a full Ventoy setup  
 
 ---
 
-# Architecture Overview
+## 🙌 Credits
 
-### main.sh  
-The orchestrator. Loads modules, parses arguments, runs the workflow.
-
-### lib/config.sh  
-Loads JSON configuration using `jq`.
-
-### lib/mode.sh  
-Implements the MODE engine and translates modes into action flags.
-
-### lib/usb.sh  
-Handles USB device detection and selection.
-
-### lib/patches.sh  
-Downloads Fedora‑specific Ventoy patches.
-
-### lib/ventoy.sh  
-Downloads, extracts, and installs Ventoy.
-
-### lib/medicat_download.sh  
-Downloads MediCat using CDN mirror benchmarking.
-
-### lib/medicat_extract.sh  
-Extracts MediCat into cache with idempotent markers.
-
-### lib/medicat_install.sh  
-Installs or updates MediCat on the USB drive.
-
-### lib/format.sh  
-Formats the Ventoy data partition safely.
-
-### lib/logging.sh  
-Unified logging API.
-
-### lib/cleanup.sh  
-Unmounts devices on exit.
+- **Ventoy Project:** https://www.ventoy.net/  
+- **MediCat USB:** https://medicatusb.com/  
+- **mon5termatt (MediCat Installer):** https://github.com/mon5termatt/medicat_installer  
+- **Frixos (Project Author):** Fedora 44 debugging, Ventoy patch integration, full script rewrite
 
 ---
 
 # License
-MIT License — see LICENSE file.
-
----
-
-# Credits
-- **Frixos** — architecture, design, testing  
+MIT License — see LICENSE file
