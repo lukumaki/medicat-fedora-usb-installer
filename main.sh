@@ -1,10 +1,10 @@
 #!/bin/bash
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Load libs
+source "$SCRIPT_DIR/lib/deps.sh"
 source "$SCRIPT_DIR/lib/config.sh"
 source "$SCRIPT_DIR/lib/logging.sh"
 source "$SCRIPT_DIR/lib/mode.sh"
@@ -21,46 +21,38 @@ trap cleanup EXIT
 
 main() {
   load_config
-
   mkdir -p "$CACHE_DIR"
   : > "$LOG_FILE"
   log_debug "Logging initialized: $LOG_FILE"
 
-  log_raw ""
-  log_raw "=============================================="
-  log_raw "  MediCat USB Builder for Fedora v7.0"
-  log_raw "=============================================="
-  log_raw ""
-
   parse_args "$@"
-  check_dependencies() {
-    command -v rsync >/dev/null || { log_error "rsync not found"; exit 1; }
-    command -v lsblk >/dev/null || { log_error "lsblk not found"; exit 1; }
-    command -v mkntfs >/dev/null || { log_error "mkntfs not found (ntfs-3g)"; exit 1; }
-    command -v curl >/dev/null || { log_error "curl not found"; exit 1; }
-    command -v wget >/dev/null || { log_error "wget not found"; exit 1; }
-    command -v 7z >/dev/null || { log_error "7z not found"; exit 1; }
-    command -v jq >/dev/null || { log_error "jq not found"; exit 1; }
-    log_ok "Core dependencies found."
-  }
   check_dependencies
-  select_usb_device
+  if ! select_usb_device; then
+    no_usb_message
+    exit 1
+  fi
 
   decide_mode
-  if [ "$MODE" = "skip" ]; then
-    log_info "User declined USB operation. Exiting."
-    exit 0
-  fi
-  # Enable auto-detection ONLY for update-only mode
   if [[ "$MODE" = "update" ]]; then
-    detect_partitions_simple
+    if ! detect_partitions; then
+      log_error "Partition autodetection failed. Aborting."
+      exit 1
+    fi
+    if ! ensure_mounted_manual_only; then
+      log_error "Medicat partition not mounted or not writable. Aborting update-only."
+      exit 1
+    fi
   fi
-  mode_to_flags
 
+  mode_to_flags
   ensure_patches
   prepare_ventoy
   download_medicat
-  extract_medicat_to_cache
+
+  if [[ "$MODE" != "update" ]]; then
+    extract_medicat
+  fi
+
   install_ventoy
   format_usb
   install_medicat
