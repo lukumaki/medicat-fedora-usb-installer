@@ -4,6 +4,33 @@ This project adheres to semantic versioning where possible.
 
 ---
 
+## [7.1] — 2026-06-06
+
+### Added
+- Stable MODE-based architecture.
+- Safe update-only mode without root privileges.
+- Automatic detection of actual mountpoints via `findmnt`.
+- NTFS-safe rsync flags (`--no-perms`, `--no-owner`, `--no-group`, `--update`).
+- New `lib/deps.sh` for dependency management.
+- Improved USB and partition detection logic.
+
+### Changed
+- Rewritten `install_medicat.sh` for clarity and safety.
+- `main.sh` reorganized for predictable mode flow.
+- Update-only mode no longer performs automatic mount/unmount.
+- Partition detection no longer assumes `${TARGET}2`.
+
+### Fixed
+- NTFS permission errors during rsync.
+- Mount detection failures on Fedora-based systems.
+- Incorrect assumptions about partition layout.
+- Update-only failures caused by chown/chmod on NTFS.
+
+### Removed
+- Legacy update logic.
+- Automatic mount/unmount behavior in update-only mode.
+
+
 ## Migration Notes — v6.x → v7.0
 
 Version **7.0** introduces a complete architectural redesign.  
