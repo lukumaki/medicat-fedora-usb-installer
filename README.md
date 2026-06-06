@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-7.0-blue.svg">
+  <img src="https://img.shields.io/badge/version-7.1-blue.svg">
   <img src="https://img.shields.io/badge/build-Modular--Architecture-brightgreen.svg">
   <img src="https://img.shields.io/badge/license-MIT-green.svg">
   <img src="https://img.shields.io/badge/platform-Fedora%2038%2B-orange.svg">
