@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/platform-Fedora%2038%2B-orange.svg">
 </p>
 
-# MediCat USB Builder for Fedora — v7.0  
+# MediCat USB Builder for Fedora  
 A fully modular, JSON‑driven, production‑grade Ventoy + MediCat USB builder for Fedora.
 
 Version **7.0** introduces a complete architectural redesign:  
