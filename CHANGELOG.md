@@ -4,6 +4,64 @@ This project adheres to semantic versioning where possible.
 
 ---
 
+# Architecture Overview
+
+### main.sh  
+The orchestrator. Loads modules, parses arguments, runs the workflow.
+
+### lib/config.sh  
+Loads JSON configuration using `jq`.
+
+### lib/mode.sh  
+Implements the MODE engine and translates modes into action flags.
+
+### lib/usb.sh  
+Handles USB device detection and selection.
+
+### lib/patches.sh  
+Downloads Fedora‑specific Ventoy patches.
+
+### lib/ventoy.sh  
+Downloads, extracts, and installs Ventoy.
+
+### lib/medicat_download.sh  
+Downloads MediCat using CDN mirror benchmarking.
+
+### lib/medicat_extract.sh  
+Extracts MediCat into cache with idempotent markers.
+
+### lib/medicat_install.sh  
+Installs or updates MediCat on the USB drive.
+
+### lib/format.sh  
+Formats the Ventoy data partition safely.
+
+### lib/logging.sh  
+Unified logging API.
+
+### lib/cleanup.sh  
+Unmounts devices on exit.
+
+---
+
+# Configuration (config.json)
+
+All paths, URLs, and defaults are stored in `config.json`.  
+Example:
+
+```json
+{
+  "paths": {
+    "cache_dir": "$HOME/Medicat_USB_Cache",
+    "ventoy_dir": "$HOME/Medicat_USB_Cache/ventoy"
+  }
+}
+```
+
+You can safely modify paths, URLs, or defaults without touching the Bash code.
+
+---
+
 ## [7.1] — 2026-06-06
 
 ### Added
