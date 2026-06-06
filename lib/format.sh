@@ -1,40 +1,99 @@
 #!/bin/bash
+# format.sh — Safe USB formatting logic (v7.1 PRO)
 
 format_usb() {
+
+  #
+  # MODE-aware skip
+  #
   if [ "$DO_FORMAT" -ne 1 ]; then
     log_debug "Format skipped (MODE=$MODE)."
     return 0
   fi
 
+  #
+  # DRY RUN
+  #
   if [ "$DRY_RUN" -eq 1 ]; then
     log_info "[DRY RUN] Would format $PART_DATA as NTFS"
     return 0
   fi
 
-  sudo umount "$TARGET" 2>/dev/null || true
-  sudo umount "$PART_DATA" 2>/dev/null || true
+  #
+  # Validate TARGET and PART_DATA
+  #
+  if [ -z "$TARGET" ] || [ ! -b "$TARGET" ]; then
+    log_error "Invalid TARGET device: $TARGET"
+    log_diagnostics
+    return 1
+  fi
 
-  log_raw ""
-  log_raw "⚠ WARNING: You are about to FORMAT $PART_DATA"
-  log_raw "This will ERASE ALL DATA on the USB drive."
-  log_raw ""
-  log_raw "To continue, type: FORMAT"
-  log_raw "To cancel, press Enter."
-  log_raw ""
+  if [ -z "$PART_DATA" ] || [ ! -b "$PART_DATA" ]; then
+    log_error "Invalid PART_DATA partition: $PART_DATA"
+    log_diagnostics
+    return 1
+  fi
+
+  #
+  # Unmount all partitions of the target device
+  #
+  log_info "Unmounting existing partitions on $TARGET..."
+
+  mapfile -t parts < <(lsblk -ln -o NAME "$TARGET" | tail -n +2)
+
+  for p in "${parts[@]}"; do
+    local dev="/dev/$p"
+
+    # Find all mountpoints for this partition
+    mapfile -t mnts < <(findmnt -nr -o TARGET -S "$dev" 2>/dev/null || true)
+
+    for m in "${mnts[@]}"; do
+      log_debug "Unmounting $dev from $m"
+      sudo umount "$m" 2>/dev/null || true
+    done
+  done
+
+  #
+  # User confirmation
+  #
+  echo ""
+  echo "⚠ WARNING: You are about to FORMAT $PART_DATA"
+  echo "This will ERASE ALL DATA on the USB drive."
+  echo ""
+  echo "To continue, type: FORMAT"
+  echo "To cancel, press Enter."
+  echo ""
 
   read -rp "> " confirm_format
   case "$confirm_format" in
     FORMAT)
       log_info "Proceeding with format..."
-      if ! sudo mkntfs --label Medicat "$PART_DATA"; then
-        log_error "Failed to format $PART_DATA"
-        return 1
-      fi
-      log_ok "Format complete."
       ;;
     *)
       log_info "Format cancelled by user."
       exit 0
       ;;
   esac
+
+  #
+  # Wipe filesystem signatures
+  #
+  log_debug "Wiping filesystem signatures on $PART_DATA..."
+  if ! sudo wipefs -a "$PART_DATA" >>"$LOG_FILE" 2>&1; then
+    log_error "wipefs failed on $PART_DATA"
+    log_diagnostics
+    return 1
+  fi
+
+  #
+  # Create NTFS filesystem
+  #
+  log_info "Creating NTFS filesystem on $PART_DATA..."
+  if ! sudo mkntfs --fast --label Medicat "$PART_DATA" >>"$LOG_FILE" 2>&1; then
+    log_error "Failed to format $PART_DATA"
+    log_diagnostics
+    return 1
+  fi
+
+  log_ok "Format complete."
 }

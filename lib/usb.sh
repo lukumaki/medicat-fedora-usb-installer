@@ -1,21 +1,29 @@
 #!/bin/bash
-# lib/usb.sh - USB selection and detection helpers for MediCat installer
+# lib/usb.sh - USB selection and detection helpers for MediCat installer (v7.1 PRO)
 
 TARGET=""
 PART_DATA=""
 EFI_PART=""
 MNT_DIR="/mnt/medicat"
 
+# ---------------------------------------------------------
 # Friendly message when no removable USB found
+# ---------------------------------------------------------
 no_usb_message() {
   log_error "No removable USB devices detected. Plug in the Medicat-Installation-USB and run the installer again."
 }
 
-# Interactive device selection. Does NOT assume partition numbers.
+# ---------------------------------------------------------
+# Interactive USB device selection
+# ---------------------------------------------------------
 select_usb_device() {
   log_info "Detecting removable USB devices..."
 
-  mapfile -t usb_list < <(lsblk -o NAME,SIZE,MODEL,RM -nr | awk '$4 == 1 {print "/dev/"$1" "$2" "$3}')
+  # List only removable devices (RM=1)
+  mapfile -t usb_list < <(
+    lsblk -o NAME,SIZE,MODEL,RM -nr \
+    | awk '$4 == 1 {print "/dev/"$1" "$2" "$3}'
+  )
 
   if [ ${#usb_list[@]} -eq 0 ]; then
     no_usb_message
@@ -55,8 +63,9 @@ select_usb_device() {
   fi
 }
 
-# Primary partition detection wrapper.
-# If you have a more advanced detector, implement detect_partitions_impl() and it will be used.
+# ---------------------------------------------------------
+# Partition detection wrapper
+# ---------------------------------------------------------
 detect_partitions() {
   if declare -F detect_partitions_impl >/dev/null 2>&1; then
     detect_partitions_impl
@@ -65,7 +74,9 @@ detect_partitions() {
   fallback_detect_partitions
 }
 
-# Fallback inline detector (uses $TARGET). Sets PART_DATA and EFI_PART.
+# ---------------------------------------------------------
+# Fallback partition detector (robust, label-aware)
+# ---------------------------------------------------------
 fallback_detect_partitions() {
   if [[ -z "$TARGET" ]]; then
     log_error "No TARGET set for partition detection."
@@ -83,54 +94,65 @@ fallback_detect_partitions() {
 
   for line in "${parts[@]}"; do
     read -r name fstype label parttype <<< "$line"
-    name="${name:-}"
-    fstype="${fstype:-}"
-    label="${label:-}"
-    parttype="${parttype:-}"
     full="/dev/$name"
 
-    # skip whole-disk line
+    # Skip whole-disk line
     [[ -z "$fstype" ]] && continue
 
-    # NTFS: prefer label "Medicat", else choose largest NTFS
+    # -----------------------------
+    # NTFS (MediCat data partition)
+    # -----------------------------
     if [[ "$fstype" == "ntfs" ]]; then
+      # Prefer label "Medicat"
       if [[ "$label" == "Medicat" ]]; then
         PART_DATA="$full"
         continue
       fi
-      size=$(lsblk -nr -o SIZE "/dev/$name" 2>/dev/null || echo "")
+
+      # Otherwise choose largest NTFS
+      size=$(lsblk -nr -o SIZE "$full" 2>/dev/null || echo "")
       num="${size//[!0-9]/}"
-      if [[ -z "$PART_DATA" || ( -n "$num" && -n "$largest_ntfs_size" && "$num" -gt "$largest_ntfs_size" ) ]]; then
+
+      if [[ -z "$PART_DATA" || "$num" -gt "$largest_ntfs_size" ]]; then
         PART_DATA="$full"
         largest_ntfs_size="$num"
       fi
     fi
 
-    # VFAT: prefer label "VTOYEFI", else choose smallest VFAT
+    # -----------------------------
+    # VFAT (Ventoy EFI partition)
+    # -----------------------------
     if [[ "$fstype" == "vfat" ]]; then
+      # Prefer label "VTOYEFI"
       if [[ "$label" == "VTOYEFI" ]]; then
         EFI_PART="$full"
         continue
       fi
-      size=$(lsblk -nr -o SIZE "/dev/$name" 2>/dev/null || echo "")
+
+      # Otherwise choose smallest VFAT
+      size=$(lsblk -nr -o SIZE "$full" 2>/dev/null || echo "")
       num="${size//[!0-9]/}"
-      if [[ -z "$EFI_PART" || ( -n "$num" && -n "$smallest_vfat_size" && "$num" -lt "$smallest_vfat_size" ) ]]; then
+
+      if [[ -z "$EFI_PART" || "$num" -lt "$smallest_vfat_size" ]]; then
         EFI_PART="$full"
         smallest_vfat_size="$num"
       fi
     fi
   done
 
-  if [[ -z "${PART_DATA:-}" ]]; then
-    log_error "Fallback detection could not find an NTFS data partition on $TARGET."
+  if [[ -z "$PART_DATA" ]]; then
+    log_error "Could not find an NTFS data partition on $TARGET."
+    log_diagnostics
     return 1
   fi
 
-  log_info "Detected partitions: PART_DATA=${PART_DATA}, EFI_PART=${EFI_PART:-NOT FOUND}"
+  log_info "Detected partitions: PART_DATA=$PART_DATA, EFI_PART=${EFI_PART:-NOT FOUND}"
   return 0
 }
 
-# Print clear mount instructions (no auto-mounting)
+# ---------------------------------------------------------
+# Print manual mount instructions (update-only)
+# ---------------------------------------------------------
 print_mount_instructions() {
   local part="${1:-$PART_DATA}"
   local mnt="${2:-$MNT_DIR}"
@@ -150,8 +172,9 @@ After mounting, re-run:
 INSTR
 }
 
-# Verify the detected PART_DATA is mounted and writable; never mounts automatically.
-# If the partition is mounted anywhere (including /run/media/$USER/...), accept it and set MNT_DIR.
+# ---------------------------------------------------------
+# Ensure PART_DATA is mounted and writable (update-only)
+# ---------------------------------------------------------
 ensure_mounted_manual_only() {
   local part="${PART_DATA:-}"
   local expected_mnt="${MNT_DIR:-/mnt/medicat}"
@@ -164,17 +187,16 @@ ensure_mounted_manual_only() {
 
   log_info "Verifying Medicat data partition for update-only..."
 
-  # Find the actual mountpoint for the partition, if any
+  # Detect actual mountpoint
   user_mount=$(findmnt -nr -o TARGET -S "$part" 2>/dev/null || true)
 
   if [[ -n "$user_mount" ]]; then
     log_debug "Partition $part is mounted at $user_mount (expected $expected_mnt)."
 
-    # Test writability at the actual mountpoint
+    # Test writability
     if touch "$user_mount/.medicat_write_test" 2>/dev/null; then
       rm -f "$user_mount/.medicat_write_test" 2>/dev/null || true
       log_info "Partition $part is mounted and writable at $user_mount."
-      # Use the actual mount for subsequent operations
       MNT_DIR="$user_mount"
       return 0
     fi
@@ -184,7 +206,7 @@ ensure_mounted_manual_only() {
     return 1
   fi
 
-  # Not mounted anywhere: print instructions for manual mount
+  # Not mounted anywhere
   log_error "Detected Medicat partition: $part (not mounted)"
   print_mount_instructions "$part" "$expected_mnt"
   return 1
