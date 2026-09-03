@@ -4,6 +4,72 @@ This project adheres to semantic versioning where possible.
 
 ---
 
+## [7.2] — Correctness and consistency release
+
+### Fixed
+- **Full install could not complete.** `medicat_extract.sh` referenced
+  `$MEDICAT_ARCHIVE`, which nothing ever assigned; under `set -u` the run
+  aborted with "unbound variable". The download module now sets it, and
+  extraction falls back to any `*.7z` found in the cache.
+- **Partitions were never detected in install mode.** Detection only ran for
+  `--update-only`, leaving `PART_DATA` empty when formatting and installing
+  needed it. Detection now also runs after Ventoy writes the partition table,
+  preceded by a `partprobe`/`udevadm settle` rescan.
+- **The Fedora Ventoy wrapper never ran.** `patch/Ventoy2Disk_fedora.sh`
+  quoted its argument into the script path (`"Ventoy2Disk.sh -I"`), so bash
+  looked for a file with that literal name.
+- **`patch_url` pointed at a non-existent directory** (`patches` vs `patch`).
+  Patches are now taken from the in-repo `patch/` directory, and the download
+  fallback uses `curl -f` plus a shebang check so a 404 page can no longer be
+  saved and marked executable as a "patch".
+- **The MediCat archive was re-downloaded every run.** The cache check used
+  `find -quit` without `-print`, which produces no output.
+- **Partition sizes were compared with their units stripped**, so `512M`
+  (512) outranked `28.9G` (289). Sizes are now read in bytes (`lsblk -b`).
+- **Conditional dependency checks were dead code.** `check_dependencies` ran
+  before `mode_to_flags`, so `INSTALL_VENTOY`/`INSTALL_MEDICAT` were still 0.
+  It now runs after the flags resolve, and also checks `mkntfs` and
+  `mkfs.exfat`.
+- **`--dry-run` was parsed too late** to stop `load_config` creating
+  directories.
+- **The USB device menu was invisible**, printed through a log-file-only
+  writer while the prompt asked the user to pick from a list they could not
+  see.
+- **Partitions were offered as install targets** alongside whole disks, and
+  devices without a MODEL string were silently omitted.
+- **Early failures crashed instead of reporting.** Logging and the cleanup
+  trap referenced variables that only exist after `load_config` succeeds.
+- **`rm -f "$DIR/*.partial"`** quoted its glob and silently matched nothing.
+- **`sudo -E`** is refused by common sudoers configurations; the Ventoy
+  wrapper now receives its variables via `sudo env`.
+
+### Changed
+- `config.json` values are expanded explicitly instead of through `eval`, so
+  configuration content is no longer evaluated as shell code.
+- `defaults.force_gpt` / `defaults.force_mbr` in `config.json` are now
+  actually read (CLI flags still win). The unused `modes` key was removed.
+- Ventoy is downloaded and extracted inside the cache directory instead of
+  the current working directory.
+- `--force-update` now does what its name says: it re-copies every file,
+  rather than being unreachable dead code.
+- Downloads land in `*.partial` and are renamed on success, so an interrupted
+  run cannot leave a truncated archive that the cache check would reuse.
+- Full install mounts the data partition as the invoking user (`ntfs-3g` with
+  `uid`/`gid`), and `sync`s before unmounting.
+- rsync uses `-rltvh` rather than `-avh`: `-a` implies `-D`, which NTFS
+  cannot represent.
+
+### Added
+- `--help` and `--verbose` flags. `[DEBUG]` output is now off-screen by
+  default and always written to the log.
+- Interactive-terminal guards: device selection and format confirmation
+  refuse to run without a TTY instead of reading EOF.
+- A safety check refusing to format any partition that is not part of the
+  selected target device.
+- Re-prompting on an invalid device number instead of aborting.
+
+---
+
 # Architecture Overview
 
 ### main.sh  
@@ -13,13 +79,18 @@ The orchestrator. Loads modules, parses arguments, runs the workflow.
 Loads JSON configuration using `jq`.
 
 ### lib/mode.sh  
-Implements the MODE engine and translates modes into action flags.
+Implements the MODE engine, parses CLI arguments, and translates modes into
+action flags.
+
+### lib/deps.sh  
+Verifies the commands the selected mode needs, after the flags are resolved.
 
 ### lib/usb.sh  
 Handles USB device detection and selection.
 
 ### lib/patches.sh  
-Downloads Fedora‑specific Ventoy patches.
+Installs the Fedora‑specific Ventoy wrappers from `patch/`, downloading them
+only if the local copies are absent.
 
 ### lib/ventoy.sh  
 Downloads, extracts, and installs Ventoy.
@@ -510,6 +581,11 @@ Manual scripts for MediCat USB creation. Not publicly released.
 
 ## Migration Guide
 
+> **Note:** the commands in the pre-7.x sections below refer to
+> `medicat_usb_builder.sh`, the single-file script used up to v6.1. From
+> v7.0 onward the entry point is `./main.sh`; the legacy script is kept in
+> the repository as `medicat_usb_builder.old` for reference only.
+
 ### From v4.x → v5.0
 
 **Automatic:** All v4.x flags still work. No action needed.
@@ -546,8 +622,11 @@ done
 # Remove old cache (optional)
 rm -rf ~/Medicat_USB_Cache
 
-# Install fresh
-bash <(curl -fsSL https://raw.githubusercontent.com/lukumaki/medicat-fedora-usb-installer/main/medicat_usb_builder.sh)
+# Install fresh — v7.x is a multi-file project, so clone it
+git clone https://github.com/lukumaki/medicat-fedora-usb-installer
+cd medicat-fedora-usb-installer
+chmod +x main.sh lib/*.sh patch/*.sh
+./main.sh
 ```
 
 ---
@@ -601,7 +680,7 @@ This project follows **Semantic Versioning** with the following rules:
 Found an issue? Have a suggestion?
 
 1. **Check existing issues:** https://github.com/lukumaki/medicat-fedora-usb-installer/issues
-2. **Enable debug mode:** `./medicat_usb_builder.sh --quiet` or check `~/Medicat_USB_Cache/medicat_usb_builder.log`
+2. **Enable debug mode:** `./main.sh --verbose` or check `~/Medicat_USB_Cache/medicat_usb_builder.log`
 3. **Attach logs:** `~/Medicat_USB_Cache/medicat_usb_builder.log`
 4. **Create issue:** Include system info, full logs, and error details
 

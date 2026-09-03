@@ -1,8 +1,8 @@
 {
   "project": {
     "name": "MediCat USB Builder for Fedora",
-    "version": "7.1",
-    "author": "Lukumaki + Copilot"
+    "version": "7.2",
+    "author": "Frixos (lukumaki)"
   },
   "paths": {
     "cache_dir": "$HOME/Medicat_USB_Cache",
@@ -20,7 +20,6 @@
     "ventoy_sourceforge": "https://sourceforge.net/projects/ventoy/files/",
     "medicat_cdn_bat": "https://cdn.medicatusb.com/cdn.bat"
   },
-  "modes": ["install", "update", "ventoy", "skip"],
   "defaults": {
     "force_gpt": true,
     "force_mbr": false

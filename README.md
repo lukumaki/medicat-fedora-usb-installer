@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-7.1-blue.svg">
+  <img src="https://img.shields.io/badge/version-7.2-blue.svg">
   <img src="https://img.shields.io/badge/build-Modular--Architecture-brightgreen.svg">
   <img src="https://img.shields.io/badge/license-MIT-green.svg">
-  <img src="https://img.shields.io/badge/platform-Fedora%2038%2B-orange.svg">
+  <img src="https://img.shields.io/badge/platform-Fedora%2040%2B-orange.svg">
 </p>
 
 # MediCat USB Builder for Fedora  
 A fully modular, JSON‑driven, production‑grade Ventoy + MediCat USB builder for Fedora.
 
-Version **7.0** introduces a complete architectural redesign:  
+Version **7.x** introduces a complete architectural redesign:  
 - Modular Bash codebase  
 - JSON configuration  
 - Clean MODE engine  
@@ -42,7 +42,7 @@ mkexfatfs → mkfs.exfat  # Safe symlink
 
 # Features
 
-### ✔ Modular Architecture (v7.0)
+### ✔ Modular Architecture
 The project is now split into logical modules:
 
 ```
@@ -52,6 +52,7 @@ lib/
   logging.sh
   config.sh
   mode.sh
+  deps.sh
   usb.sh
   patches.sh
   ventoy.sh
@@ -60,6 +61,9 @@ lib/
   medicat_install.sh
   format.sh
   cleanup.sh
+patch/
+  Ventoy2Disk_fedora.sh
+  VentoyWorker_fedora.sh
 ```
 
 Each module is responsible for a single subsystem.
@@ -101,9 +105,20 @@ The installer supports four modes:
 
 # Requirements
 
-- Fedora 38+  
-- `bash`, `jq`, `curl`, `wget`, `rsync`, `7z`, `ntfs-3g`, `lsblk`  
-- Internet connection for Ventoy + MediCat downloads  
+- Fedora 40+ (earlier releases that still ship `mkexfatfs` work too)  
+- A removable USB drive of at least 32 GB — **all data on it will be erased**  
+- `sudo` privileges  
+- Internet connection for the Ventoy + MediCat downloads  
+
+Install everything the builder needs:
+
+```bash
+sudo dnf install jq rsync curl wget p7zip p7zip-plugins bc \
+                 ntfs-3g ntfsprogs exfatprogs util-linux
+```
+
+The installer verifies these on startup and only requires the packages the
+selected mode actually uses.
 
 ---
 
@@ -120,7 +135,7 @@ Make scripts executable:
 
 ```bash
 chmod +x main.sh
-chmod -R +x lib/
+chmod +x lib/*.sh patch/*.sh
 ```
 
 ---
@@ -148,10 +163,28 @@ chmod -R +x lib/
 ./main.sh --force-mbr
 ```
 
+### Force a full re-copy of every MediCat file
+```bash
+./main.sh --force-update
+```
+
 ### DRY RUN (no changes made)
 ```bash
 ./main.sh --dry-run
 ```
+
+### Verbose output (show DEBUG lines on screen)
+```bash
+./main.sh --verbose
+```
+
+### All options
+```bash
+./main.sh --help
+```
+
+Everything is also written to `~/Medicat_USB_Cache/medicat_usb_builder.log`,
+including a diagnostics dump whenever a step fails.
 
 ----
 
@@ -159,10 +192,14 @@ chmod -R +x lib/
 
 - This version is **recommended for all Fedora users**  
 - Existing MediCat USB drives can be updated using:  
+  ```bash
+  ./main.sh --update-only
   ```
-  ./medicat_usb_builder.sh --update-only
-  ```
+  Update-only expects you to mount the MediCat partition yourself first; the
+  installer prints the exact `mount` command if it is not mounted.
 - First‑time installation still requires a full Ventoy setup  
+- Downloads are cached in `~/Medicat_USB_Cache`, so a repeated run does not
+  re-download the ~20 GB archive  
 
 ---
 
