@@ -49,19 +49,33 @@ select_usb_device() {
     ((i++))
   done
 
-  log_plain ""
-  read -rp "Select a USB device (1-${#usb_list[@]}), or press Enter to cancel: " choice
+  require_interactive "Selecting a USB device" || return 1
 
-  if [ -z "$choice" ]; then
-    log_info "No device selected."
-    USER_DECLINED_USB=1
-    return 1
-  fi
+  local choice=""
+  local attempts=0
 
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#usb_list[@]} ]; then
-    log_error "Invalid selection."
-    return 1
-  fi
+  # Re-prompt on a typo rather than aborting the whole run.
+  while :; do
+    log_plain ""
+    read -rp "Select a USB device (1-${#usb_list[@]}), or press Enter to cancel: " choice
+
+    if [ -z "$choice" ]; then
+      log_info "No device selected."
+      USER_DECLINED_USB=1
+      return 1
+    fi
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le ${#usb_list[@]} ]; then
+      break
+    fi
+
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 3 ]; then
+      log_error "Too many invalid selections."
+      return 1
+    fi
+    log_warn "Invalid selection: enter a number between 1 and ${#usb_list[@]}."
+  done
 
   TARGET=$(echo "${usb_list[$((choice-1))]}" | awk '{print $1}')
 

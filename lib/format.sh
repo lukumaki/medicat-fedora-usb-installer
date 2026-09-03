@@ -50,8 +50,13 @@ format_usb() {
   unmount_device_partitions "$TARGET"
 
   #
-  # User confirmation
+  # User confirmation — never format unattended
   #
+  if ! require_interactive "Formatting $PART_DATA"; then
+    log_diagnostics
+    return 1
+  fi
+
   echo ""
   echo "⚠ WARNING: You are about to FORMAT $PART_DATA on $TARGET"
   echo "This will ERASE ALL DATA on that partition."

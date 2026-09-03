@@ -106,3 +106,19 @@ log_diagnostics() {
 
     log_raw "=== Diagnostics End ==="
 }
+
+# ---------------------------------------------------------
+# Interactive prompt guard
+# ---------------------------------------------------------
+# Destructive steps must never proceed unattended. If stdin is not a
+# terminal there is nobody to confirm, so callers should abort rather than
+# read EOF and fall through to a default.
+is_interactive() { [ -t 0 ]; }
+
+require_interactive() {
+  if ! is_interactive; then
+    log_error "$1 requires an interactive terminal (stdin is not a TTY)."
+    return 1
+  fi
+  return 0
+}

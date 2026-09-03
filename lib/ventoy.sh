@@ -158,14 +158,15 @@ install_ventoy() {
   local ventoy_output
   local rc=0
 
-  # VTOY_NO_PROMPT and VENTOY_DIR must survive sudo, hence `sudo -E`.
-  export VTOY_NO_PROMPT=1
-  export VENTOY_DIR
+  # The wrapper needs VENTOY_DIR and VTOY_NO_PROMPT as root. `sudo -E` is
+  # refused outright by common sudoers configurations (env_reset without
+  # SETENV), so pass them through `env` instead, which always works.
+  local sudo_env=(sudo env "VTOY_NO_PROMPT=1" "VENTOY_DIR=$VENTOY_DIR")
 
   if [ "$use_gpt" -eq 1 ]; then
-    ventoy_output=$(sudo -E "$wrapper" -I -g "$TARGET" 2>&1) || rc=$?
+    ventoy_output=$("${sudo_env[@]}" "$wrapper" -I -g "$TARGET" 2>&1) || rc=$?
   else
-    ventoy_output=$(sudo -E "$wrapper" -I "$TARGET" 2>&1) || rc=$?
+    ventoy_output=$("${sudo_env[@]}" "$wrapper" -I "$TARGET" 2>&1) || rc=$?
   fi
 
   printf '%s\n' "$ventoy_output" >> "$LOG_FILE"

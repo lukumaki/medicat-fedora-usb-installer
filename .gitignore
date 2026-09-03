@@ -1,26 +1,29 @@
 # Logs
 *.log
 logs/
-medicat_builder.log
 
-# Temporary directories
+# Temporary directories and files
 tmp/
 temp/
 *.tmp
+*.partial
 
-# Ventoy extracted folder
+# Ventoy download/extraction leftovers
+# (the installer now works inside $CACHE_DIR, but older runs wrote here)
 ventoy/
 ventoy-*/
+ventoy.tar.gz
 
-# Medicat extracted folder
+# MediCat archives and extracted trees
+*.7z
+cdn.bat
+extracted/
 MedicatUSB/
 MedicatExtracted/
-Medicat*/
 
 # Mountpoints
 mnt/
 mount/
-MedicatUSB/
 
 # Backup files
 *~
@@ -43,7 +46,7 @@ MedicatUSB/
 
 # Python virtualenvs (if ever added)
 venv/
-.env/
+.venv/
 
 # System files
 Thumbs.db
