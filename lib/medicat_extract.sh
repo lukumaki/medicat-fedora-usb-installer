@@ -2,6 +2,28 @@
 # medicat_extract.sh
 # Safe, MODE-aware MediCat extraction logic (v7.1 PRO)
 
+# ---------------------------------------------------------
+# Resolve the archive path set by download_medicat, falling back to
+# whatever .7z is sitting in the cache (e.g. a manually placed archive).
+# ---------------------------------------------------------
+resolve_medicat_archive() {
+  if [ -n "${MEDICAT_ARCHIVE:-}" ] && [ -f "$MEDICAT_ARCHIVE" ]; then
+    return 0
+  fi
+
+  local found
+  found="$(find "$MEDICAT_DIR" -maxdepth 1 -type f -name '*.7z' -print -quit 2>/dev/null)"
+
+  if [ -n "$found" ]; then
+    MEDICAT_ARCHIVE="$found"
+    log_debug "Resolved MediCat archive from cache: $MEDICAT_ARCHIVE"
+    return 0
+  fi
+
+  MEDICAT_ARCHIVE=""
+  return 1
+}
+
 extract_medicat() {
 
   #
@@ -21,19 +43,10 @@ extract_medicat() {
   # DRY RUN
   #
   if [ "$DRY_RUN" -eq 1 ]; then
-    log_info "[DRY RUN] Would extract MediCat archive:"
-    log_info "  Archive: $MEDICAT_ARCHIVE"
+    log_info "[DRY RUN] Would extract the MediCat archive:"
+    log_info "  Archive: ${MEDICAT_ARCHIVE:-<downloaded into $MEDICAT_DIR>}"
     log_info "  Target:  $MEDICAT_DIR/extracted/"
     return 0
-  fi
-
-  #
-  # VALIDATE ARCHIVE
-  #
-  if [ ! -f "$MEDICAT_ARCHIVE" ]; then
-    log_error "MediCat archive not found: $MEDICAT_ARCHIVE"
-    log_diagnostics
-    return 1
   fi
 
   #
@@ -45,18 +58,27 @@ extract_medicat() {
   fi
 
   #
+  # VALIDATE ARCHIVE
+  #
+  if ! resolve_medicat_archive; then
+    log_error "No MediCat archive (*.7z) found in $MEDICAT_DIR"
+    log_diagnostics
+    return 1
+  fi
+
+  #
   # PREPARE EXTRACTION DIRECTORY
   #
   mkdir -p "$MEDICAT_DIR/extracted"
 
-  log_info "Extracting MediCat archive..."
+  log_info "Extracting MediCat archive (this takes a while)..."
   log_debug "7z x \"$MEDICAT_ARCHIVE\" -o\"$MEDICAT_DIR/extracted\""
 
   #
   # EXTRACTION
   #
-  if ! 7z x "$MEDICAT_ARCHIVE" -o"$MEDICAT_DIR/extracted" >>"$LOG_FILE" 2>&1; then
-    log_error "Extraction failed."
+  if ! 7z x -y "$MEDICAT_ARCHIVE" -o"$MEDICAT_DIR/extracted" >>"$LOG_FILE" 2>&1; then
+    log_error "Extraction failed. Check log: $LOG_FILE"
     log_diagnostics
     return 1
   fi

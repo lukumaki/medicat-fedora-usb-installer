@@ -1,86 +1,95 @@
 #!/bin/bash
 # patches.sh — Fedora Ventoy patch management (v7.1 PRO)
+#
+# The wrappers ship with this repository, so the local copies under patch/
+# are authoritative. Downloading is only a fallback for installations that
+# were copied without the patch/ directory.
+
+PATCH_FILES=("Ventoy2Disk_fedora.sh" "VentoyWorker_fedora.sh")
 
 ensure_patches() {
 
   #
   # MODE CHECK
   #
-  if [ "$MODE" = "update" ]; then
-    log_debug "Skipping Ventoy patch download (MODE=update)."
+  if [ "$INSTALL_VENTOY" -ne 1 ]; then
+    log_debug "Skipping Ventoy patch setup (INSTALL_VENTOY=0)."
     return 0
   fi
 
-  #
-  # Validate PATCH_URL
-  #
-  if [ -z "$PATCH_URL" ]; then
-    log_error "PATCH_URL is not set. Cannot download Fedora Ventoy patches."
-    log_diagnostics
-    return 1
-  fi
-
-  log_info "Checking Fedora Ventoy patches..."
+  log_info "Preparing Fedora Ventoy patches..."
   log_debug "Patch directory: $PATCH_DIR"
-  log_debug "Patch source URL: $PATCH_URL"
 
   #
   # DRY RUN
   #
   if [ "$DRY_RUN" -eq 1 ]; then
-    log_info "[DRY RUN] Would ensure patches exist in $PATCH_DIR"
+    log_info "[DRY RUN] Would install patch wrappers into $PATCH_DIR"
     return 0
   fi
 
   mkdir -p "$PATCH_DIR"
 
-  #
-  # Helper: download a single patch file
-  #
-  download_patch() {
-    local file="$1"
-    local url="$PATCH_URL/$file"
+  local local_patch_dir="$PROJECT_ROOT/patch"
+  local file
 
-    log_debug "Processing patch: $file"
-    log_debug "URL: $url"
-
-    # Already present?
-    if [ -f "$PATCH_DIR/$file" ]; then
-      if [ -s "$PATCH_DIR/$file" ]; then
-        log_ok "$file already present."
-        return 0
-      else
-        log_warn "$file exists but is empty. Re-downloading."
-        rm -f "$PATCH_DIR/$file"
-      fi
+  for file in "${PATCH_FILES[@]}"; do
+    if [ -f "$local_patch_dir/$file" ]; then
+      # Always refresh from the repository copy so an updated checkout is
+      # not shadowed by a stale wrapper left in the cache.
+      cp -f "$local_patch_dir/$file" "$PATCH_DIR/$file"
+      chmod +x "$PATCH_DIR/$file"
+      log_debug "Installed local patch: $file"
+    else
+      download_patch "$file" || return 1
     fi
+  done
 
-    log_info "Downloading $file..."
+  log_ok "Fedora Ventoy patches ready in $PATCH_DIR."
+}
 
-    if ! curl -s -L -o "$PATCH_DIR/$file" "$url"; then
-      log_error "Failed to download $file"
-      rm -f "$PATCH_DIR/$file"
-      log_diagnostics
-      return 1
-    fi
+# ---------------------------------------------------------
+# Fallback: download a single patch file from the repository
+# ---------------------------------------------------------
+download_patch() {
+  local file="$1"
 
-    # Validate file
-    if [ ! -s "$PATCH_DIR/$file" ]; then
-      log_error "Downloaded $file but file is empty."
-      rm -f "$PATCH_DIR/$file"
-      log_diagnostics
-      return 1
-    fi
+  if [ -z "${PATCH_URL:-}" ]; then
+    log_error "PATCH_URL is not set and $file is missing locally."
+    log_diagnostics
+    return 1
+  fi
 
-    chmod +x "$PATCH_DIR/$file"
-    log_ok "$file downloaded and validated."
-  }
+  local url="$PATCH_URL/$file"
+  local dest="$PATCH_DIR/$file"
 
-  #
-  # Download required patches
-  #
-  download_patch "Ventoy2Disk_fedora.sh" || return 1
-  download_patch "VentoyWorker_fedora.sh" || return 1
+  log_info "Downloading $file..."
+  log_debug "URL: $url"
 
-  log_ok "Fedora Ventoy patches ready."
+  # -f makes curl fail on HTTP errors. Without it a GitHub 404 page is saved
+  # as the "patch": non-empty, chmod +x, and executed as an HTML file.
+  if ! curl -fsSL -o "$dest" "$url"; then
+    log_error "Failed to download $file from $url"
+    rm -f "$dest"
+    log_diagnostics
+    return 1
+  fi
+
+  if [ ! -s "$dest" ]; then
+    log_error "Downloaded $file but the file is empty."
+    rm -f "$dest"
+    log_diagnostics
+    return 1
+  fi
+
+  # Sanity check: a shell wrapper must start with a shebang.
+  if ! head -c 2 "$dest" | grep -q '#!'; then
+    log_error "Downloaded $file does not look like a shell script (wrong patch_url?)."
+    rm -f "$dest"
+    log_diagnostics
+    return 1
+  fi
+
+  chmod +x "$dest"
+  log_ok "$file downloaded and validated."
 }

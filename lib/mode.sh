@@ -19,6 +19,30 @@ INSTALL_MEDICAT=0
 DO_FORMAT=0
 
 # ---------------------------------------------------------
+# Usage
+# ---------------------------------------------------------
+usage() {
+  cat <<'USAGE'
+Usage: ./main.sh [options]
+
+Modes:
+  (no options)      Full install: Ventoy + format + MediCat
+  --update-only     Update MediCat on an already-mounted MediCat partition
+  --force-update    Re-copy every MediCat file, ignoring timestamps
+  --skip-medicat    Install Ventoy only
+
+Partitioning:
+  --force-gpt       Force GPT partitioning (default)
+  --force-mbr       Force MBR partitioning
+
+Other:
+  --dry-run         Show what would happen; change nothing
+  --verbose         Print [DEBUG] lines on screen as well as to the log
+  -h, --help        Show this help and exit
+USAGE
+}
+
+# ---------------------------------------------------------
 # Parse CLI arguments
 # ---------------------------------------------------------
 parse_args() {
@@ -30,21 +54,35 @@ parse_args() {
       --force-gpt)     FORCE_GPT=1 ;;
       --force-mbr)     FORCE_MBR=1 ;;
       --dry-run)       DRY_RUN=1 ;;
+      --verbose)       VERBOSE=1 ;;
+      -h|--help)       usage; exit 0 ;;
       *)
         log_error "Unknown argument: $1"
+        usage >&2
         exit 1
         ;;
     esac
     shift
   done
+
+  #
+  # Conflict detection (checked here so we fail before touching anything)
+  #
+  if [ "$FORCE_GPT" -eq 1 ] && [ "$FORCE_MBR" -eq 1 ]; then
+    log_error "Cannot use --force-gpt and --force-mbr together."
+    exit 1
+  fi
+
+  if [ "$SKIP_MEDICAT" -eq 1 ] && { [ "$UPDATE_ONLY" -eq 1 ] || [ "$FORCE_UPDATE" -eq 1 ]; }; then
+    log_error "--skip-medicat cannot be combined with --update-only/--force-update."
+    exit 1
+  fi
 }
 
 # ---------------------------------------------------------
 # Decide MODE based on flags
 # ---------------------------------------------------------
 decide_mode() {
-
-  MODE="install"   # default
 
   #
   # Highest priority: user declined USB
@@ -122,20 +160,13 @@ mode_to_flags() {
   esac
 
   #
-  # Conflict detection
-  #
-  if [ "$FORCE_GPT" -eq 1 ] && [ "$FORCE_MBR" -eq 1 ]; then
-    log_error "Cannot use --force-gpt and --force-mbr together."
-    exit 1
-  fi
-
-  #
   # DRY RUN logging
   #
   if [ "$DRY_RUN" -eq 1 ]; then
     log_info "[DRY RUN] No changes will be made."
   fi
 
+  log_info "Mode: $MODE"
   log_debug "Flags resolved:"
   log_debug "  INSTALL_VENTOY=$INSTALL_VENTOY"
   log_debug "  INSTALL_MEDICAT=$INSTALL_MEDICAT"

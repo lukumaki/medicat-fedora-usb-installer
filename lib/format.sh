@@ -15,7 +15,7 @@ format_usb() {
   # DRY RUN
   #
   if [ "$DRY_RUN" -eq 1 ]; then
-    log_info "[DRY RUN] Would format $PART_DATA as NTFS"
+    log_info "[DRY RUN] Would format the MediCat data partition on $TARGET as NTFS"
     return 0
   fi
 
@@ -34,31 +34,29 @@ format_usb() {
     return 1
   fi
 
+  # Refuse to format anything that is not a partition of the selected device.
+  case "$PART_DATA" in
+    "$TARGET"?*) ;;
+    *)
+      log_error "Refusing to format $PART_DATA: it is not a partition of $TARGET."
+      log_diagnostics
+      return 1
+      ;;
+  esac
+
   #
   # Unmount all partitions of the target device
   #
-  log_info "Unmounting existing partitions on $TARGET..."
-
-  mapfile -t parts < <(lsblk -ln -o NAME "$TARGET" | tail -n +2)
-
-  for p in "${parts[@]}"; do
-    local dev="/dev/$p"
-
-    # Find all mountpoints for this partition
-    mapfile -t mnts < <(findmnt -nr -o TARGET -S "$dev" 2>/dev/null || true)
-
-    for m in "${mnts[@]}"; do
-      log_debug "Unmounting $dev from $m"
-      sudo umount "$m" 2>/dev/null || true
-    done
-  done
+  unmount_device_partitions "$TARGET"
 
   #
   # User confirmation
   #
   echo ""
-  echo "⚠ WARNING: You are about to FORMAT $PART_DATA"
-  echo "This will ERASE ALL DATA on the USB drive."
+  echo "⚠ WARNING: You are about to FORMAT $PART_DATA on $TARGET"
+  echo "This will ERASE ALL DATA on that partition."
+  echo ""
+  lsblk -o NAME,SIZE,FSTYPE,LABEL "$TARGET" || true
   echo ""
   echo "To continue, type: FORMAT"
   echo "To cancel, press Enter."
@@ -94,6 +92,9 @@ format_usb() {
     log_diagnostics
     return 1
   fi
+
+  # The label changed, so re-detect to keep PART_DATA/EFI_PART accurate.
+  refresh_partition_table
 
   log_ok "Format complete."
 }

@@ -6,15 +6,10 @@
 # ---------------------------------------------------------
 download_ventoy() {
 
-  if [ "$MODE" = "update" ]; then
-    log_debug "Skipping Ventoy download (MODE=update)."
-    return 0
-  fi
-
   log_info "Detecting latest Ventoy version from SourceForge..."
 
   local latest
-  latest=$(curl -s "$VENTOY_SF_URL" 2>/dev/null \
+  latest=$(curl -sL "$VENTOY_SF_URL" 2>/dev/null \
     | grep -oP 'v[0-9]+\.[0-9]+\.[0-9]+' \
     | sort -V \
     | tail -n 1 || true)
@@ -39,51 +34,61 @@ download_ventoy() {
     return 0
   fi
 
-  if ! wget --progress=dot:giga -O ventoy.tar.gz "$url"; then
+  # Work inside a scratch directory under the cache. The previous version
+  # downloaded and extracted into the caller's current directory, which
+  # littered whatever directory the user happened to launch from.
+  local workdir="$CACHE_DIR/.ventoy_download"
+  rm -rf "$workdir"
+  mkdir -p "$workdir"
+
+  local archive="$workdir/ventoy.tar.gz"
+
+  if ! wget --progress=dot:giga -O "$archive" "$url"; then
     log_error "Failed to download Ventoy"
+    rm -rf "$workdir"
     log_diagnostics
     return 1
   fi
 
   log_info "Extracting Ventoy..."
-  if ! tar -xf ventoy.tar.gz; then
+  if ! tar -xf "$archive" -C "$workdir"; then
     log_error "Failed to extract Ventoy archive"
-    rm -f ventoy.tar.gz
+    rm -rf "$workdir"
     log_diagnostics
     return 1
   fi
 
   # Find extracted folder
   local extracted
-  extracted=$(find . -maxdepth 1 -type d -name "ventoy-*" | head -n 1)
+  extracted=$(find "$workdir" -maxdepth 1 -type d -name "ventoy-*" -print -quit)
 
   if [ -z "$extracted" ]; then
     log_error "Extraction succeeded but no Ventoy directory found."
+    rm -rf "$workdir"
     log_diagnostics
     return 1
   fi
 
   rm -rf "$VENTOY_DIR"
-  mkdir -p "$VENTOY_DIR"
+  mkdir -p "$(dirname "$VENTOY_DIR")"
 
-  if ! mv "$extracted"/* "$VENTOY_DIR"/ 2>/dev/null; then
-    log_error "Failed to move Ventoy files"
-    rm -f ventoy.tar.gz
+  if ! mv "$extracted" "$VENTOY_DIR"; then
+    log_error "Failed to move Ventoy files into $VENTOY_DIR"
+    rm -rf "$workdir"
     log_diagnostics
     return 1
   fi
 
-  rm -f ventoy.tar.gz
-  rm -rf "$extracted"
+  rm -rf "$workdir"
 
   # Validate Ventoy folder
-  if [ ! -f "$VENTOY_DIR/Ventoy2Disk.sh" ] && [ ! -f "$VENTOY_DIR/Ventoy2Disk_fedora.sh" ]; then
-    log_error "Ventoy directory is missing required scripts."
+  if [ ! -f "$VENTOY_DIR/Ventoy2Disk.sh" ]; then
+    log_error "Ventoy directory is missing Ventoy2Disk.sh."
     log_diagnostics
     return 1
   fi
 
-  log_ok "Ventoy ready in $VENTOY_DIR."
+  log_ok "Ventoy $latest ready in $VENTOY_DIR."
 }
 
 # ---------------------------------------------------------
@@ -91,23 +96,29 @@ download_ventoy() {
 # ---------------------------------------------------------
 prepare_ventoy() {
 
-  if [ "$MODE" = "update" ]; then
-    log_debug "Skipping Ventoy preparation (MODE=update)."
+  if [ "$INSTALL_VENTOY" -ne 1 ]; then
+    log_debug "Skipping Ventoy preparation (INSTALL_VENTOY=0)."
     return 0
   fi
 
-  if [ ! -d "$VENTOY_DIR" ]; then
-    download_ventoy || exit 1
-  else
+  # A directory alone is not proof of a usable install: a previous run may
+  # have been interrupted midway through extraction.
+  if [ -f "$VENTOY_DIR/Ventoy2Disk.sh" ]; then
     log_ok "Ventoy folder already exists (cached)."
+    return 0
   fi
+
+  if [ -d "$VENTOY_DIR" ] && [ "$DRY_RUN" -ne 1 ]; then
+    log_warn "Ventoy cache at $VENTOY_DIR is incomplete — re-downloading."
+  fi
+
+  download_ventoy
 }
 
 # ---------------------------------------------------------
 # Install Ventoy to the USB device
 # ---------------------------------------------------------
 install_ventoy() {
-  export VTOY_NO_PROMPT=1
 
   if [ "$INSTALL_VENTOY" -ne 1 ]; then
     log_debug "Ventoy installation skipped (MODE=$MODE)."
@@ -118,15 +129,12 @@ install_ventoy() {
   # Partitioning mode
   #
   local use_gpt=1
-  if [ "$FORCE_GPT" -eq 1 ]; then
-    use_gpt=1
-    log_info "Forcing GPT partitioning."
-  elif [ "$FORCE_MBR" -eq 1 ]; then
+  if [ "$FORCE_MBR" -eq 1 ]; then
     use_gpt=0
-    log_info "Forcing MBR partitioning."
+    log_info "Using MBR partitioning."
   else
     use_gpt=1
-    log_info "Using default GPT partitioning."
+    log_info "Using GPT partitioning."
   fi
 
   #
@@ -137,20 +145,39 @@ install_ventoy() {
     return 0
   fi
 
+  local wrapper="$PATCH_DIR/Ventoy2Disk_fedora.sh"
+  if [ ! -x "$wrapper" ]; then
+    log_error "Fedora Ventoy wrapper not found or not executable: $wrapper"
+    log_diagnostics
+    return 1
+  fi
+
   #
   # Actual installation
   #
   local ventoy_output
+  local rc=0
+
+  # VTOY_NO_PROMPT and VENTOY_DIR must survive sudo, hence `sudo -E`.
+  export VTOY_NO_PROMPT=1
+  export VENTOY_DIR
+
   if [ "$use_gpt" -eq 1 ]; then
-    ventoy_output=$(sudo "$PATCH_DIR/Ventoy2Disk_fedora.sh" -I -g "$TARGET" 2>&1)
+    ventoy_output=$(sudo -E "$wrapper" -I -g "$TARGET" 2>&1) || rc=$?
   else
-    ventoy_output=$(sudo "$PATCH_DIR/Ventoy2Disk_fedora.sh" -I "$TARGET" 2>&1)
+    ventoy_output=$(sudo -E "$wrapper" -I "$TARGET" 2>&1) || rc=$?
   fi
 
-  echo "$ventoy_output" >> "$LOG_FILE"
+  printf '%s\n' "$ventoy_output" >> "$LOG_FILE"
 
-  if ! echo "$ventoy_output" | grep -qi "success"; then
-    log_error "Ventoy installation failed. Check log: $LOG_FILE"
+  if [ "$rc" -ne 0 ]; then
+    log_error "Ventoy installation exited with status $rc. Check log: $LOG_FILE"
+    log_diagnostics
+    return 1
+  fi
+
+  if ! printf '%s' "$ventoy_output" | grep -qi "success"; then
+    log_error "Ventoy installation did not report success. Check log: $LOG_FILE"
     log_diagnostics
     return 1
   fi

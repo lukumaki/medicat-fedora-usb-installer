@@ -16,7 +16,7 @@
   },
   "urls": {
     "repo_url": "https://github.com/lukumaki/medicat-fedora-usb-installer",
-    "patch_url": "https://github.com/lukumaki/medicat-fedora-usb-installer/raw/main/patches",
+    "patch_url": "https://github.com/lukumaki/medicat-fedora-usb-installer/raw/main/patch",
     "ventoy_sourceforge": "https://sourceforge.net/projects/ventoy/files/",
     "medicat_cdn_bat": "https://cdn.medicatusb.com/cdn.bat"
   },

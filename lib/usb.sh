@@ -4,7 +4,9 @@
 TARGET=""
 PART_DATA=""
 EFI_PART=""
-MNT_DIR="/mnt/medicat"
+# MNT_DIR is loaded from config.json by load_config; this is only a safety net
+# for callers that source this module without loading the configuration.
+MNT_DIR="${MNT_DIR:-/mnt/medicat}"
 
 # ---------------------------------------------------------
 # Friendly message when no removable USB found
@@ -19,10 +21,17 @@ no_usb_message() {
 select_usb_device() {
   log_info "Detecting removable USB devices..."
 
-  # List only removable devices (RM=1)
+  # -d limits the listing to whole disks: without it the device's own
+  # partitions are also RM=1 and would be offered as install targets.
   mapfile -t usb_list < <(
-    lsblk -o NAME,SIZE,MODEL,RM -nr \
-    | awk '$4 == 1 {print "/dev/"$1" "$2" "$3}'
+    lsblk -d -o NAME,SIZE,RM,TYPE,MODEL -nr \
+    | awk '$3 == 1 && $4 == "disk" {
+        model = "";
+        for (i = 5; i <= NF; i++) model = model (i > 5 ? " " : "") $i;
+        gsub(/\\x20/, " ", model);
+        if (model == "") model = "unknown model";
+        print "/dev/" $1 "\t" $2 "\t" model;
+      }'
   )
 
   if [ ${#usb_list[@]} -eq 0 ]; then
@@ -30,18 +39,24 @@ select_usb_device() {
     return 1
   fi
 
-  log_raw ""
-  log_raw "Available USB devices:"
-  log_raw ""
+  log_plain ""
+  log_plain "Available USB devices:"
+  log_plain ""
 
   local i=1
   for dev in "${usb_list[@]}"; do
-    log_raw "  $i) $dev"
+    log_plain "  $i) $(echo -e "$dev")"
     ((i++))
   done
 
-  log_raw ""
-  read -rp "Select a USB device (1-${#usb_list[@]}): " choice
+  log_plain ""
+  read -rp "Select a USB device (1-${#usb_list[@]}), or press Enter to cancel: " choice
+
+  if [ -z "$choice" ]; then
+    log_info "No device selected."
+    USER_DECLINED_USB=1
+    return 1
+  fi
 
   if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#usb_list[@]} ]; then
     log_error "Invalid selection."
@@ -50,17 +65,61 @@ select_usb_device() {
 
   TARGET=$(echo "${usb_list[$((choice-1))]}" | awk '{print $1}')
 
-  log_raw ""
-  log_raw "You selected: $TARGET"
+  if [ ! -b "$TARGET" ]; then
+    log_error "Selected device is not a block device: $TARGET"
+    TARGET=""
+    return 1
+  fi
+
+  log_plain ""
+  log_plain "You selected: $TARGET"
   read -rp "Proceed with this device? (y/N): " confirm
 
   if [[ "$confirm" =~ ^[Yy]$ ]]; then
     USER_DECLINED_USB=0
+    log_info "Target device: $TARGET"
     return 0
   else
     USER_DECLINED_USB=1
+    TARGET=""
     return 1
   fi
+}
+
+# ---------------------------------------------------------
+# Ask the kernel to re-read the partition table
+# (needed after Ventoy rewrites it, before partitions can be detected)
+# ---------------------------------------------------------
+refresh_partition_table() {
+  if [ "${DRY_RUN:-0}" -eq 1 ]; then
+    log_info "[DRY RUN] Would re-read the partition table on $TARGET"
+    return 0
+  fi
+
+  [ -z "$TARGET" ] && return 0
+
+  log_debug "Re-reading partition table on $TARGET"
+
+  if command -v partprobe >/dev/null 2>&1; then
+    sudo partprobe "$TARGET" >/dev/null 2>&1 || true
+  fi
+
+  if command -v udevadm >/dev/null 2>&1; then
+    sudo udevadm settle >/dev/null 2>&1 || true
+  fi
+
+  # Give slow devices a moment to expose the new partition nodes.
+  local tries=0
+  while [ "$tries" -lt 10 ]; do
+    if [ -n "$(lsblk -nr -o NAME "$TARGET" | tail -n +2)" ]; then
+      return 0
+    fi
+    tries=$((tries + 1))
+    sleep 1
+  done
+
+  log_warn "Partitions did not appear on $TARGET after re-reading the partition table."
+  return 0
 }
 
 # ---------------------------------------------------------
@@ -87,33 +146,35 @@ fallback_detect_partitions() {
   PART_DATA=""
   EFI_PART=""
 
-  mapfile -t parts < <(lsblk -nr -o NAME,FSTYPE,LABEL,PARTTYPE "$TARGET")
+  # -b gives sizes in bytes. Human-readable sizes cannot be compared
+  # numerically: "28.9G" and "512M" both reduce to bare digits (289 vs 512).
+  mapfile -t parts < <(lsblk -nrb -o NAME,FSTYPE,SIZE,LABEL,PARTTYPE "$TARGET")
 
   local largest_ntfs_size=0
-  local smallest_vfat_size=""
+  local smallest_vfat_size=0
+  local labelled_data=0
+  local labelled_efi=0
 
+  local line name fstype size label parttype full
   for line in "${parts[@]}"; do
-    read -r name fstype label parttype <<< "$line"
+    read -r name fstype size label parttype <<< "$line"
     full="/dev/$name"
 
-    # Skip whole-disk line
+    # Skip the whole-disk line and any unformatted partition
     [[ -z "$fstype" ]] && continue
+    [[ "$full" == "$TARGET" ]] && continue
+
+    local num="${size:-0}"
+    [[ "$num" =~ ^[0-9]+$ ]] || num=0
 
     # -----------------------------
     # NTFS (MediCat data partition)
     # -----------------------------
     if [[ "$fstype" == "ntfs" ]]; then
-      # Prefer label "Medicat"
       if [[ "$label" == "Medicat" ]]; then
         PART_DATA="$full"
-        continue
-      fi
-
-      # Otherwise choose largest NTFS
-      size=$(lsblk -nr -o SIZE "$full" 2>/dev/null || echo "")
-      num="${size//[!0-9]/}"
-
-      if [[ -z "$PART_DATA" || "$num" -gt "$largest_ntfs_size" ]]; then
+        labelled_data=1
+      elif [ "$labelled_data" -eq 0 ] && { [[ -z "$PART_DATA" ]] || [ "$num" -gt "$largest_ntfs_size" ]; }; then
         PART_DATA="$full"
         largest_ntfs_size="$num"
       fi
@@ -123,17 +184,10 @@ fallback_detect_partitions() {
     # VFAT (Ventoy EFI partition)
     # -----------------------------
     if [[ "$fstype" == "vfat" ]]; then
-      # Prefer label "VTOYEFI"
       if [[ "$label" == "VTOYEFI" ]]; then
         EFI_PART="$full"
-        continue
-      fi
-
-      # Otherwise choose smallest VFAT
-      size=$(lsblk -nr -o SIZE "$full" 2>/dev/null || echo "")
-      num="${size//[!0-9]/}"
-
-      if [[ -z "$EFI_PART" || "$num" -lt "$smallest_vfat_size" ]]; then
+        labelled_efi=1
+      elif [ "$labelled_efi" -eq 0 ] && { [[ -z "$EFI_PART" ]] || [ "$num" -lt "$smallest_vfat_size" ]; }; then
         EFI_PART="$full"
         smallest_vfat_size="$num"
       fi
@@ -188,7 +242,7 @@ ensure_mounted_manual_only() {
   log_info "Verifying Medicat data partition for update-only..."
 
   # Detect actual mountpoint
-  user_mount=$(findmnt -nr -o TARGET -S "$part" 2>/dev/null || true)
+  user_mount=$(findmnt -nr -o TARGET -S "$part" 2>/dev/null | head -n1 || true)
 
   if [[ -n "$user_mount" ]]; then
     log_debug "Partition $part is mounted at $user_mount (expected $expected_mnt)."
